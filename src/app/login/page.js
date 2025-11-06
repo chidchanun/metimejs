@@ -48,9 +48,8 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex items-center justify-center  bg-[#79A8D8] p-4">
             <div className="w-full max-w-md">
-                <div className="bg-[#a8d67d] backdrop-blur-sm shadow-xl rounded-2xl p-8 border border-slate-200">
+                <div className="bg-[#94cbf8] backdrop-blur-sm shadow-xl rounded-2xl p-8 border border-slate-200">
                     <div className="mb-6 text-center">
-                        {/* <div className="mx-auto mb-2 h-12 w-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white text-xl font-bold">S</div> */}
                         <Image
                             className="mx-auto block mb-2"
                             src="/metimelogo.png"
@@ -77,7 +76,7 @@ export default function LoginPage() {
                                 autoComplete="username"
                                 value={studentCode}
                                 onChange={(e) => setStudentCode(e.target.value.trim())}
-                                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/50 text-black"
+                                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#084B83] text-black"
                                 placeholder="เช่น 64123456"
                                 required
                             />
@@ -90,7 +89,7 @@ export default function LoginPage() {
                                 autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/50 text-black"
+                                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#084B83] text-black"
                                 placeholder="รหัสผ่าน e-student"
                                 required
                             />
@@ -106,7 +105,7 @@ export default function LoginPage() {
                     </form>
                 </div>
 
-                <p className="mt-6 text-center text-xs text-slate-500">© {new Date().getFullYear()} Student Support</p>
+                <p className="mt-6 text-center text-xs text-slate-500">© {new Date().getFullYear()} METIME Support</p>
             </div>
         </div>
     );
