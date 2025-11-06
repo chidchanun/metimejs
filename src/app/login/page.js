@@ -15,21 +15,30 @@ export default function LoginPage() {
 
   async function onSubmit(e) {
     e.preventDefault();
+
     if (!studentCode || !password) return;
     setLoading(true);
 
-    const res = await signIn("credentials", {
-      redirect: false,
-      studentCode,
-      password,
-      callbackUrl: "/",
-    });
+    try {
+      const res = await fetch(
+        `http://it.e-tech.ac.th/api/v1/login?username=${studentCode}&password=${password}`,
+        {
+          method: "POST",
+        }
+      );
 
-    if (res?.ok) {
-      router.push(res.url ?? "/");
-      router.refresh();
-    } else {
-      alert(res?.error ?? "ไม่สามารถเข้าสู่ระบบได้");
+      const data = await res.json(); // 👈 แปลง response เป็น JSON
+      console.log("Response JSON:", data);
+
+      if (res.ok) {
+        // ✅ ทำสิ่งที่ต้องการเมื่อ login สำเร็จ เช่นเก็บ token
+        console.log("Token:", data.token);
+        // localStorage.setItem("token", data.token);
+      } else {
+        console.error("Login failed:", data.error || data.message);
+      }
+    } catch (err) {
+      console.error("เกิดข้อผิดพลาด:", err);
     }
 
     setLoading(false);
@@ -60,7 +69,7 @@ export default function LoginPage() {
                 autoComplete="username"
                 value={studentCode}
                 onChange={(e) => setStudentCode(e.target.value.trim())}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/50"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/50 text-black"
                 placeholder="เช่น 64123456"
                 required
               />
@@ -73,7 +82,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/50"
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/50 text-black"
                 placeholder="รหัสผ่าน e-student"
                 required
               />
