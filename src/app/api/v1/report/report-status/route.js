@@ -28,6 +28,28 @@ export async function GET() {
 export async function POST(request) {
     try {
         const body = await request.json()
+        const {report_id, status_id} = body
+
+        if (!report_id || !status_id){
+            return NextResponse.json({message : "โปรดกรอกข้อมูลให้ครบถ้วน"})
+        }
+
+        const [rows] = await db.query(
+            "SELECT * FROM report_status WHERE report_id = ?", [report_id]
+        )
+
+        if (rows.length == 1){
+            const report_statusDB = rows[0]
+            await db.query(
+                "UPDATE report_status SET status_id = ? WHERE report_id = ?" , [status_id, report_statusDB.report_id] 
+            )
+            return NextResponse.json({message : "ok"}, {status : 200})
+        }
+
+        await db.query(
+            "INSERT INTO report_status (report_id, status_id) VALUES (?,?)", [report_id, status_id]
+        )
+
         return NextResponse.json({ message: "ok" }, { status: 200 })
     } catch {
         return NextResponse.json({ message: "Internal Server Error" }, { status: 400 })
