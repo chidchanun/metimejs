@@ -26,18 +26,15 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     let alive = true;
-
     async function load() {
       try {
         setLoading(true);
         setError(null);
-
         const res = await fetch(`${API_BASE}/api/v1/report`, {
           cache: "no-store",
           headers: { "Content-Type": "application/json" },
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
         const list = Array.isArray(data?.result) ? data.result : [];
         if (alive) setReports(list);
@@ -47,16 +44,9 @@ export default function TeacherDashboard() {
         if (alive) setLoading(false);
       }
     }
-
     load();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [API_BASE]);
-
-  const tokenCookie = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("auth_token="));
 
   const counters = useMemo(() => {
     const total = reports.length;
@@ -65,16 +55,10 @@ export default function TeacherDashboard() {
       a.getFullYear() === b.getFullYear() &&
       a.getMonth() === b.getMonth() &&
       a.getDate() === b.getDate();
-
     const todayCount = reports.filter((r) =>
       isSameDay(new Date(r.reported_at), today)
     ).length;
-
-    return {
-      queue: total,
-      inProgress: 0,
-      closedToday: todayCount,
-    };
+    return { queue: total, inProgress: 0, closedToday: todayCount };
   }, [reports]);
 
   return (
@@ -83,14 +67,17 @@ export default function TeacherDashboard() {
         <h1 className="text-2xl font-semibold">แดชบอร์ดฝ่ายพัฒนา</h1>
         <p className="text-slate-500">คิวขอความช่วยเหลือและปัญหาที่ต้องติดตาม</p>
 
+        {/* Tiles */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Tile title="คิวแชทที่รอรับ" value={counters.queue} />
           <Tile title="กำลังดำเนินการ" value={counters.inProgress} />
           <Tile title="แจ้งวันนี้" value={counters.closedToday} />
         </div>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {/* Content: 12-cols -> 5/7 split on md+ */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Left: Helpdesk (md:span 5) */}
+          <div className="md:col-span-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 p-4 font-medium">
               แชทที่ขอความช่วยเหลือ
             </div>
@@ -101,71 +88,104 @@ export default function TeacherDashboard() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {/* Right: Issues (md:span 7) */}
+          <div className="md:col-span-7 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 p-4 font-medium">
               ปัญหาที่รายงาน (ไม่แสดงผู้รายงาน)
             </div>
+
             <div className="p-4">
               {error ? (
                 <div className="text-red-600 text-sm">เกิดข้อผิดพลาด: {error}</div>
               ) : null}
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-slate-500">
-                    <th className="py-2 pr-4">รหัส</th>
-                    <th className="py-2 pr-4">หัวข้อ</th>
-                    <th className="py-2 pr-4">หมวดหมู่</th>
-                    <th className="py-2 pr-4">ความรุนแรง</th>
-                    <th className="py-2 pr-4">สถานที่</th>
-                    <th className="py-2 pr-4">เวลาแจ้ง</th>
-                    <th className="py-2 pr-4">ไฟล์</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="py-6 text-slate-500">
-                        กำลังโหลด...
-                      </td>
+
+              {/* responsive wrapper prevents overflow */}
+              <div className="overflow-x-auto -mx-2 md:mx-0">
+                <table className="min-w-full table-fixed text-sm">
+                  {/* control column widths */}
+                  <colgroup>
+                    <col className="w-14" />              
+                    <col />                                   
+                    <col className="w-40" />                 
+                    <col className="w-24" />                
+                    <col className="w-40" />                
+                    <col className="w-40" />              
+                    <col className="w-20" />           
+                  </colgroup>
+
+                  <thead>
+                    <tr className="text-left text-slate-500">
+                      <th className="py-2 px-2 md:px-0">รหัส</th>
+                      <th className="py-2 px-2 md:px-0">รายละเอียด</th>
+                      <th className="py-2 px-2 md:px-0">หมวดหมู่</th>
+                      <th className="py-2 px-2 md:px-0">ความรุนแรง</th>
+                      <th className="py-2 px-2 md:px-0">สถานที่</th>
+                      <th className="py-2 px-2 md:px-0">เวลาแจ้ง</th>
+                      <th className="py-2 px-2 md:px-0">ไฟล์</th>
                     </tr>
-                  ) : reports.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-6 text-slate-500">
-                        ไม่มีรายการ
-                      </td>
-                    </tr>
-                  ) : (
-                    reports.map((r) => (
-                      <tr key={r.report_id} className="border-t border-slate-100">
-                        <td className="py-3 pr-4 font-medium">#{r.report_id}</td>
-                        <td className="py-3 pr-4">{r.title}</td>
-                        <td className="py-3 pr-4">{r.problem_type}</td>
-                        <td className="py-3 pr-4">{r.problem_severe}</td>
-                        <td className="py-3 pr-4">{r.problem_where}</td>
-                        <td className="py-3 pr-4">{fmtTime(r.reported_at)}</td>
-                        <td className="py-3 pr-4">
-                          {r.image_url ? (
-                            <a
-                              href={
-                                r.image_url.startsWith("http")
-                                  ? r.image_url
-                                  : `${API_BASE}${r.image_url}`
-                              }
-                              className="underline"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              เปิดรูป
-                            </a>
-                          ) : (
-                            "-"
-                          )}
+                  </thead>
+
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="py-6 text-slate-500">
+                          กำลังโหลด...
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : reports.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-6 text-slate-500">
+                          ไม่มีรายการ
+                        </td>
+                      </tr>
+                    ) : (
+                      reports.map((r) => (
+                        <tr key={r.report_id} className="border-t border-slate-100 align-top">
+                          <td className="py-3 pr-2 md:pr-4 font-medium whitespace-nowrap">
+                            #{r.report_id}
+                          </td>
+
+                          {/* รายละเอียด: clamp 2 บรรทัด */}
+                          <td className="py-3 pr-2 md:pr-4 break-words">
+                            <div className="line-clamp-2">
+                              {r.description}
+                            </div>
+                          </td>
+
+                          <td className="py-3 pr-2 md:pr-4">{r.problem_type}</td>
+                          <td className="py-3 pr-2 md:pr-4">{r.problem_severe}</td>
+                          <td className="py-3 pr-2 md:pr-4 break-words">
+                            {r.problem_where}
+                          </td>
+
+                          {/* เวลา & ลิงก์ไม่ตัดบรรทัด เพื่อไม่กินพื้นที่แนวตั้ง */}
+                          <td className="py-3 pr-2 md:pr-4 whitespace-nowrap">
+                            {fmtTime(r.reported_at)}
+                          </td>
+                          <td className="py-3 pr-2 md:pr-4 whitespace-nowrap">
+                            {r.image_url ? (
+                              <a
+                                href={
+                                  r.image_url.startsWith("http")
+                                    ? r.image_url
+                                    : `${API_BASE}${r.image_url}`
+                                }
+                                className="underline"
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                เปิดรูป
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
