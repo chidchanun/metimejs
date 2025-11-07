@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+
   async function onSubmit(e) {
     e.preventDefault();
 
@@ -28,21 +29,53 @@ export default function LoginPage() {
     );
 
     const data = await res.json(); // 👈 แปลง response เป็น JSON
-    
+
     const resLocal = await fetch("/api/v1/login", {
-      method : "POST",
-      headers : {"Content-Type" : "application/json"},
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        studentCode : studentCode,
-        password : password,
-        token : data.token
+        studentCode: studentCode,
+        password: password,
+        token: data.token
       })
     })
 
-    const dataLocal = await resLocal.json()
-    console.log(dataLocal)
 
-    setLoading(false);
+    if (!resLocal.ok) {
+      setLoading(false);
+      return;
+    }
+
+    const tokenCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth_token="));
+
+    const token = decodeURIComponent(tokenCookie.split("=")[1])
+
+    const resRole = await fetch("/api/v1/role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    });
+
+    const RoleJson = await resRole.json();
+    const RoleRouter = RoleJson.result[0].role_name
+
+    if (RoleRouter === "นักเรียน") {
+      setLoading(false);
+
+      router.push("/student-home")
+    } else if (RoleRouter === "อาจารย์ฝ่ายพัฒนา") {
+      setLoading(false);
+
+      router.push("teacher")
+    } else if (RoleRouter === "ผู้ดูแลระบบ") {
+      setLoading(false);
+
+      router.push("dashboard")
+
+    }
+
   }
 
   return (
