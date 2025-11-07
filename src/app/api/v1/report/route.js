@@ -6,7 +6,6 @@ export async function GET() {
         const [result] = await db.query(`
       SELECT 
         r.report_id,
-        r.title,
         r.description,
         r.problem_where,
         r.image_url,
