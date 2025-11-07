@@ -61,15 +61,21 @@ export default function LoginPage() {
     const RoleJson = await resRole.json();
     const RoleRouter = RoleJson.result[0].role_name
 
-    if (RoleRouter === "นักเรียน"){
+    if (RoleRouter === "นักเรียน") {
+      setLoading(false);
+
       router.push("/student-home")
     } else if (RoleRouter === "อาจารย์ฝ่ายพัฒนา") {
+      setLoading(false);
+
       router.push("teacher")
     } else if (RoleRouter === "ผู้ดูแลระบบ") {
+      setLoading(false);
+
       router.push("dashboard")
+
     }
 
-    setLoading(false);
   }
 
   return (
