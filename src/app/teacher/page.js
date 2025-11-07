@@ -75,9 +75,9 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Content: 12-cols -> 5/7 split on md+ */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="mt-8 grid grid-cols-1  gap-6">
           {/* Left: Helpdesk (md:span 5) */}
-          <div className="md:col-span-5 rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="md:col-span-7 rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 p-4 font-medium">
               แชทที่ขอความช่วยเหลือ
             </div>
