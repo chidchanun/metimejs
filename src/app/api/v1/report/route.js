@@ -3,21 +3,33 @@ import { db } from "@/app/lib/db";
 
 export async function GET() {
     try {
+        const [result] = await db.query(`
+      SELECT 
+        r.report_id,
+        r.title,
+        r.description,
+        r.problem_where,
+        r.image_url,
+        r.reported_at,
+        pt.problemType_name AS problem_type,
+        ps.problemSevere_name AS problem_severe
+      FROM report r
+      LEFT JOIN problem_type pt ON r.problem_type = pt.problemType_id
+      LEFT JOIN problem_severe ps ON r.problem_severe = ps.problemSevere_id
+      ORDER BY r.report_id DESC
+    `);
 
-        const [result] = await db.query(
-            "SELECT * FROM report"
-        )
-
-        return NextResponse.json({ message: "ok", result }, { status: 200 })
-    } catch {
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
+        return NextResponse.json({ message: "ok", result }, { status: 200 });
+    } catch (error) {
+        console.error("DB Error:", error);
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }
 
 export async function POST(request) {
     try {
         const body = await request.json()
-        const { title, description, problem_where, problem_type, problem_severe, image_url, reported_at, token } = body
+        const { description, problem_where, problem_type, problem_severe, image_url, reported_at, token } = body
 
         if (!token) {
             return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 })
@@ -48,13 +60,13 @@ export async function POST(request) {
 
         const UserLocalDB = row_users[0]
 
-        if (!title || !description || !problem_type || !problem_severe) {
+        if (!description || !problem_type || !problem_severe) {
             return NextResponse.json({ message: "โปรดกรอกข้อมูลให้ครบถ้วน" }, { status: 400 })
         }
 
         const [result] = await db.query(
-            "INSERT INTO report (title, description, problem_where, problem_type, problem_severe, image_url, reported_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [title, description, problem_where, problem_type, problem_severe, image_url, reported_at]
+            "INSERT INTO report (description, problem_where, problem_type, problem_severe, image_url, reported_at) VALUES ( ?, ?, ?, ?, ?, ?)",
+            [description, problem_where, problem_type, problem_severe, image_url, reported_at]
         );
 
         const insertedId = result.insertId;
