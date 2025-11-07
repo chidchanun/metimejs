@@ -5,7 +5,6 @@ export async function POST(request) {
     try {
         const body = await request.json()
         const { token } = body
-
         if (!token) {
             return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 200 })
         }
@@ -19,6 +18,7 @@ export async function POST(request) {
         }
 
         const UserTokenLocalDB = rows[0]
+        console.log(UserTokenLocalDB)
         const expiresTime = new Date(UserTokenLocalDB.token_expires).getTime();
 
         if (expiresTime < Date.now()) {
