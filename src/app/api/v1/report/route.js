@@ -4,7 +4,7 @@ import { db } from "@/app/lib/db";
 export async function POST(request) {
     try {
         const body = await request.json()
-        const { title, description, problem_where, problem_type, problem_severe, image_url, token } = body
+        const { title, description, problem_where, problem_type, problem_severe, image_url, reported_at , token } = body
 
         if (!token) {
             return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 })
@@ -40,8 +40,8 @@ export async function POST(request) {
         }
 
         const [result] = await db.query(
-            "INSERT INTO report (title, description, problem_where, problem_type, problem_severe, image_url, reported_at) VALUES (?, ?, ?, ?, ?, ?, NOW())",
-            [title, description, problem_where, problem_type, problem_severe, image_url]
+            "INSERT INTO report (title, description, problem_where, problem_type, problem_severe, image_url, reported_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [title, description, problem_where, problem_type, problem_severe, image_url, reported_at]
         );
 
         const insertedId = result.insertId;
