@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 
+export async function GET() {
+    try {
+
+        const [result] = await db.query(
+            "SELECT * FROM report"
+        )
+
+        return NextResponse.json({ message: "ok", result }, { status: 200 })
+    } catch {
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
+    }
+}
+
 export async function POST(request) {
     try {
         const body = await request.json()
-        const { title, description, problem_where, problem_type, problem_severe, image_url, reported_at , token } = body
+        const { title, description, problem_where, problem_type, problem_severe, image_url, reported_at, token } = body
 
         if (!token) {
             return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 })
@@ -47,25 +60,12 @@ export async function POST(request) {
         const insertedId = result.insertId;
 
         await db.query(
-            "INSERT INTO user_report (user_id, report_id) VALUES (?,?)" , [UserLocalDB.id, insertedId]
+            "INSERT INTO user_report (user_id, report_id) VALUES (?,?)", [UserLocalDB.id, insertedId]
         )
 
         return NextResponse.json({ message: "ok" }, { status: 200 })
     } catch {
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
 
-    }
-}
-
-export async function GET(){
-    try {
-
-        const [result] = await db.query(
-            "SELECT * FROM report"
-        )
-
-        return NextResponse.json({message : "ok", result}, {status : 200})
-    } catch {
-        return NextResponse.json({message : "Internal Server Error"}, {status : 500})
     }
 }
