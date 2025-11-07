@@ -11,7 +11,7 @@ export async function POST(request) {
         }
 
         const [rows] = await db.query(
-            "SELECT * FROM user_tokens = ?"[token]
+            "SELECT * FROM user_tokens WHERE token = ?", [token]
         )
 
         if (rows.lenght == 0) {
@@ -36,12 +36,13 @@ export async function POST(request) {
         const UserLocalDB = row_users[0]
 
         const [result] = await db.query(
-            "SELECT * FROM role_id = ?" , [UserLocalDB.role_id]
+            "SELECT * FROM role WHERE role_id = ?" , [UserLocalDB.role_id]
         )
 
         return NextResponse.json({message : "ok", result}, {status : 200})
         
-    } catch {
-        return NextResponse.json({message : "Internal Server Error"} , {status : 200})
+    } catch (e) {
+        console.log(e)
+        return NextResponse.json({message : "Internal Server Error"} , {status : 500})
     }
 }
