@@ -1,6 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+
+
+import AlertCard from "../components/AlertCard";
 
 function Tile({ title, value }) {
   return (
@@ -19,12 +23,51 @@ function fmtTime(iso) {
 
 export default function TeacherDashboard() {
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3000";
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reports, setReports] = useState([]);
+  // Set ค่า AlertCard
+  const [alertTitle, setAlertTitle] = useState("")
+  const [alertDetail, setAlertDetail] = useState("")
+  const [alertShow, setAlertShow] = useState(false)
+
+  // ดึง token จาก cookie
+
+
+
+  async function UserCheckRole(tokenValue) {
+    if (!tokenValue) {
+      setAlertShow(true)
+      setAlertTitle("ไม่พบผู้ใช้งาน")
+      setAlertDetail("โปรดเข้าสู่ระบบใหม่อีกครั้ง")
+      return;
+    }
+
+    const resUser = await fetch(`${API_BASE}/api/v1/user/id`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: tokenValue
+      })
+    })
+
+    const UserLocalDB = await resUser.json()
+
+    if (UserLocalDB.UserLocalDB.role_id == 1) {
+      setAlertShow(true)
+      setAlertTitle("ไม่มีสิทธิ์ในการเข้าถึงหน้านี้")
+      setAlertDetail("กดปุ่มเพื่อกลับไปหน้าหลัก")
+    }
+  }
+
+
 
   useEffect(() => {
+
+    const tokenCookie = document.cookie.split("; ").find((row) => row.startsWith("auth_token="));
+    const tokenValue = decodeURIComponent(tokenCookie.split("=")[1]);
+
+
     let alive = true;
     async function load() {
       try {
@@ -45,6 +88,7 @@ export default function TeacherDashboard() {
       }
     }
     load();
+    UserCheckRole(tokenValue)
     return () => { alive = false; };
   }, [API_BASE]);
 
@@ -63,6 +107,11 @@ export default function TeacherDashboard() {
 
   return (
     <main className="min-h-screen bg-slate-50">
+      {
+        alertShow && (
+          <AlertCard AlertTitle={alertTitle} AlertDetail={alertDetail} />
+        )
+      }
       <div className="mx-auto max-w-6xl p-6">
         <h1 className="text-2xl font-semibold">แดชบอร์ดฝ่ายพัฒนา</h1>
         <p className="text-slate-500">คิวขอความช่วยเหลือและปัญหาที่ต้องติดตาม</p>
@@ -104,13 +153,13 @@ export default function TeacherDashboard() {
                 <table className="min-w-full table-fixed text-sm">
                   {/* control column widths */}
                   <colgroup>
-                    <col className="w-14" />              
-                    <col />                                   
-                    <col className="w-40" />                 
-                    <col className="w-24" />                
-                    <col className="w-40" />                
-                    <col className="w-40" />              
-                    <col className="w-20" />           
+                    <col className="w-14" />
+                    <col />
+                    <col className="w-40" />
+                    <col className="w-24" />
+                    <col className="w-40" />
+                    <col className="w-40" />
+                    <col className="w-20" />
                   </colgroup>
 
                   <thead>

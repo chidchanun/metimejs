@@ -19,6 +19,10 @@ export async function POST(request){
         }
 
         const UserTokenLocalDB = rows[0]
+        const expiresTime = new Date(UserTokenLocalDB.token_expires).getTime();
+        if (expiresTime < Date.now()) {
+            return NextResponse.json({message : "โปรดเข้าสู่ระบบใหม่อีกครั้ง"}, {status : 400})
+        }
 
         const [row_users] = await db.query(
             "SELECT * FROM users WHERE id = ?", [UserTokenLocalDB.user_id]

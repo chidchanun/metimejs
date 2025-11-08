@@ -71,7 +71,6 @@ export default function LoginPage() {
       router.push("teacher")
     } else if (RoleRouter === "ผู้ดูแลระบบ") {
       setLoading(false);
-
       router.push("dashboard")
 
     }
