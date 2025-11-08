@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
+import LogoutButton from "../components/LogoutButton";
 
 import AlertCard from "../components/AlertCard";
 
@@ -113,8 +113,18 @@ export default function TeacherDashboard() {
         )
       }
       <div className="mx-auto max-w-6xl p-6">
-        <h1 className="text-2xl font-semibold">แดชบอร์ดฝ่ายพัฒนา</h1>
-        <p className="text-slate-500">คิวขอความช่วยเหลือและปัญหาที่ต้องติดตาม</p>
+        <div className="flex justify-between items-start gap-4">
+
+          {/* ซ้าย: h1 + p */}
+          <div>
+            <h1 className="text-2xl font-semibold">แดชบอร์ดฝ่ายพัฒนา</h1>
+            <p className="text-slate-500">คิวขอความช่วยเหลือและปัญหาที่ต้องติดตาม</p>
+          </div>
+
+          {/* ขวา: ปุ่ม Logout */}
+          <LogoutButton className="bg-red-600 shrink-0" />
+
+        </div>
 
         {/* Tiles */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">

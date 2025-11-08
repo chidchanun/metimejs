@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import RelaxPlayer from "../components/RelaxPlayer";
 import IssueReportForm from "../components/IssueReportForm";
 import MoodPickerCard from "../components/MoodPickerCard";
+import LogoutButton from "../components/LogoutButton";
 
 /**
  * Utilities
@@ -117,6 +118,8 @@ export default function StudentHome() {
   const [openReport, setOpenReport] = useState(false);
   const [hasMoodToday, setHasMoodToday] = useState(false);
   const [openMood, setOpenMood] = useState(false);
+  const [range, setRange] = useState(7);
+
 
   const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -128,34 +131,40 @@ export default function StudentHome() {
     setHasMoodToday(done);
   }, []);
 
-  // mock โหลดข้อมูล (เดโม)
   useEffect(() => {
-    const t1 = setTimeout(() => setLoading(false), 300);
-    const t2 = setTimeout(() => {
-      setMoods([
-        { d: "อา", mood: "good" },
-        { d: "จ", mood: "neutral" },
-        { d: "อ", mood: "good" },
-        { d: "พ", mood: "bad" },
-        { d: "พฤ", mood: "good" },
-        { d: "ศ", mood: "good" },
-        { d: "ส", mood: "neutral" },
-      ]);
-      setMyIssues([
-        { id: 210, category: "การเรียน", status: "ยังไม่ดำเนินการ" },
-        { id: 211, category: "สุขภาพจิต", status: "รอดำเนินการ" },
-      ]);
-      setMyChats([
-        { id: 6001, topic: "เครียดเรื่องงานกลุ่ม", status: "open" },
-        { id: 6002, topic: "อยากปรึกษาการเงิน", status: "closed" },
-      ]);
-      setLoading(false);
-    }, 400);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    async function loadMood() {
+      try {
+        const res = await fetch(`/api/v1/user-emotion?days=${range}`, { cache: "no-store" });
+        const { data } = await res.json();
+        console.log('rows', data.length, data);
+
+        setMoods(
+          data.map((row) => ({
+            d: new Date(row.created_at).toLocaleDateString("th-TH", { weekday: "short" }),
+            mood:
+              row.emotion_name.includes("ดี")
+                ? "good"
+                : row.emotion_name.includes("แย่")
+                  ? "bad"
+                  : "neutral",
+          }))
+        );
+        const todayStr = new Date().toDateString();
+        const hasToday = data.some(
+          r => new Date(r.created_at).toDateString() === todayStr
+        );
+        setHasMoodToday(hasToday);
+      } catch (e) {
+        console.error("โหลด mood ล้มเหลว:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMood();
   }, []);
+
+
 
   const categories = [
     { id: 1, name: "ความเครียดจากการเรียน" },
@@ -167,13 +176,13 @@ export default function StudentHome() {
   ];
 
   const moodColor = (m) =>
-    ({
-      very_good: "bg-emerald-500",
-      good: "bg-emerald-400",
-      neutral: "bg-slate-300",
-      bad: "bg-amber-400",
-      very_bad: "bg-rose-500",
-    }[m] || "bg-slate-300");
+  ({
+    very_good: "bg-emerald-500",
+    good: "bg-emerald-400",
+    neutral: "bg-slate-300",
+    bad: "bg-amber-400",
+    very_bad: "bg-rose-500",
+  }[m] || "bg-slate-300");
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -185,6 +194,7 @@ export default function StudentHome() {
               ดูภาพรวมช่วงนี้และเริ่มใช้งานอย่างรวดเร็ว
             </p>
           </div>
+          <LogoutButton className="bg-red-600" />
         </header>
 
         {/* Quick actions */}
@@ -205,9 +215,21 @@ export default function StudentHome() {
           </QuickButton>
         </div>
 
+
         {/* Mood last 7 days */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-          <div className="font-medium mb-3 sm:mb-4">อารมณ์ 7 วันที่ผ่านมา</div>
+          <div className="flex justify-between">
+            <div className="font-medium mb-3 sm:mb-4">อารมณ์ 7 วันที่ผ่านมา</div>
+            <div className="flex ">
+              <button onClick={() => setRange(7)} className={`px-3 py-1 rounded ${range === 7 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
+                7 วัน
+              </button>
+              <button onClick={() => setRange(30)} className={`px-3 py-1 rounded ${range === 30 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
+                30 วัน
+              </button>
+            </div>
+
+          </div>
           {loading ? (
             <div className="text-slate-500">กำลังโหลด...</div>
           ) : (
