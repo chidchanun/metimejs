@@ -147,7 +147,7 @@ export default function RelaxPlayer({ playlist = [] }) {
           className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover border border-slate-200"
         />
         <div className="min-w-0">
-          <div className="truncate font-medium">{current.title}</div>
+          <div className="truncate font-medium text-black">{current.title}</div>
           <div className="text-xs text-slate-500 truncate">{current.artist || "Relax Audio"}</div>
         </div>
       </div>
@@ -175,18 +175,16 @@ export default function RelaxPlayer({ playlist = [] }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsShuffle((v) => !v)}
-            className={`px-3 py-1.5 rounded-lg text-sm border ${
-              isShuffle ? "bg-slate-900 text-white border-slate-900" : "border-slate-300"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm border text-black ${isShuffle ? "bg-slate-900 text-white border-slate-900" : "border-slate-300"
+              }`}
             title="สุ่มเพลง"
           >
             สุ่ม
           </button>
           <button
             onClick={() => setIsLoop((v) => !v)}
-            className={`px-3 py-1.5 rounded-lg text-sm border ${
-              isLoop ? "bg-slate-900 text-white border-slate-900" : "border-slate-300"
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm border text-black ${isLoop ? "bg-slate-900 text-white border-slate-900" : "border-slate-300"
+              }`}
             title="เล่นซ้ำ"
           >
             ซ้ำ
@@ -196,21 +194,21 @@ export default function RelaxPlayer({ playlist = [] }) {
         <div className="flex items-center gap-2">
           <button
             onClick={prev}
-            className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+            className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50 text-black"
             title="ก่อนหน้า"
           >
             ◀
           </button>
           <button
             onClick={togglePlay}
-            className="rounded-xl bg-slate-900 text-white px-4 py-1.5 text-sm hover:opacity-90"
+            className="rounded-xl bg-slate-900 text-white px-4 py-1.5 text-sm hover:opacity-90 "
             title={isPlaying ? "หยุดชั่วคราว" : "เล่น"}
           >
             {isPlaying ? "Pause" : "Play"}
           </button>
           <button
             onClick={next}
-            className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+            className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50 text-black"
             title="ถัดไป"
           >
             ▶

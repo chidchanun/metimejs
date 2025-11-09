@@ -190,7 +190,7 @@ export default function StudentHome() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 sm:gap-2">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold">สวัสดี 👋</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-black">สวัสดี 👋</h1>
             <p className="text-slate-500 text-sm sm:text-base">
               ดูภาพรวมช่วงนี้และเริ่มใช้งานอย่างรวดเร็ว
             </p>
@@ -220,12 +220,12 @@ export default function StudentHome() {
         {/* Mood last 7 days */}
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="flex justify-between">
-            <div className="font-medium mb-3 sm:mb-4">อารมณ์ 7 วันที่ผ่านมา</div>
+            <div className="font-medium mb-3 sm:mb-4 text-black">อารมณ์ 7 วันที่ผ่านมา</div>
             <div className="flex ">
-              <button onClick={() => setRange(7)} className={`px-3 py-1 rounded ${range === 7 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
+              <button onClick={() => setRange(7)} className={`px-3 py-1 rounded text-black ${range === 7 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
                 7 วัน
               </button>
-              <button onClick={() => setRange(30)} className={`px-3 py-1 rounded ${range === 30 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
+              <button onClick={() => setRange(30)} className={`px-3 py-1 rounded text-black ${range === 30 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
                 30 วัน
               </button>
             </div>
@@ -257,7 +257,7 @@ export default function StudentHome() {
 
         {/* Relax music widget */}
         <section className="mt-6">
-          <div className="mb-2 sm:mb-3 font-medium">เปิดเสียงผ่อนคลาย</div>
+          <div className="mb-2 sm:mb-3 font-medium text-black">เปิดเสียงผ่อนคลาย</div>
           <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
             <RelaxPlayer
               playlist={[
@@ -290,7 +290,7 @@ export default function StudentHome() {
         {/* My Issues & Chats: วางเป็นกริด 1 คอลัมน์บนมือถือ / 2 คอลัมน์บนจอใหญ่ */}
         <section className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-            <div className="font-medium mb-3">ปัญหาที่ฉันรายงาน</div>
+            <div className="font-medium mb-3 text-black">ปัญหาที่ฉันรายงาน</div>
             {loading ? (
               <div className="text-slate-500">กำลังโหลด...</div>
             ) : myIssues.length === 0 ? (
@@ -315,7 +315,7 @@ export default function StudentHome() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-            <div className="font-medium mb-3">ห้องแชทของฉัน</div>
+            <div className="font-medium mb-3 text-black">ห้องแชทของฉัน</div>
             {loading ? (
               <div className="text-slate-500">กำลังโหลด...</div>
             ) : myChats.length === 0 ? (
