@@ -95,7 +95,7 @@ function Modal({ open, onClose, title, children }) {
           className="w-full max-w-xl sm:max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 outline-none"
         >
           <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-200">
-            <h3 className="font-semibold text-base sm:text-lg">{title}</h3>
+            <h3 className="font-semibold text-base sm:text-lg text-black">{title}</h3>
             <button
               onClick={onClose}
               className="rounded-lg px-2 py-1 text-slate-600 hover:bg-slate-100"

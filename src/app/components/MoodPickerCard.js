@@ -14,7 +14,7 @@ export default function MoodPickerCard({ onSubmit }) {
   return (
     <div className="space-y-4">
       <div>
-        <div className="text-lg font-medium">วันนี้คุณรู้สึกอย่างไร?</div>
+        <div className="text-lg font-medium text-black">วันนี้คุณรู้สึกอย่างไร?</div>
         <div className="text-slate-500 text-sm">เลือกอารมณ์ของคุณวันนี้</div>
       </div>
 
