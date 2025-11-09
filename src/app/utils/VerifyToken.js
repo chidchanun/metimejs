@@ -6,7 +6,6 @@ export async function VerifyToken() {
             .find((row) => row.startsWith("auth_token=")); // ✅ ตรงกับที่เซิร์ฟเวอร์ตั้งไว้
 
         if (!tokenCookie) {
-            console.log("❌ ไม่พบ token");
             router.push("/login");
             return;
         }
