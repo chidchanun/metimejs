@@ -342,16 +342,20 @@ export default function StudentHome() {
       </div>
 
       {/* Modal: รายงานปัญหา */}
-      <Modal open={openReport} onClose={() => setOpenReport(false)} title="รายงานปัญหา">
+      {/* <Modal open={openReport} onClose={() => setOpenReport(false)} title="รายงานปัญหา">
         <IssueReportForm
           categories={categories}
-          endpoint="/api/issues"
-          onSubmitted={() => {
-            setOpenReport(false);
-            // TODO: โหลด myIssues ใหม่ถ้าต้องการ
-          }}
+          endpoint="/api/v1/report"  
+          onSubmitted={() => setOpenReport(false)}
         />
+      </Modal> */}
+      <Modal open={openReport} onClose={() => setOpenReport(false)} title="รายงานปัญหา">
+        <IssueReportForm endpoint="/api/v1/report" onSubmitted={() => setOpenReport(false)} />
       </Modal>
+
+
+
+
 
       {/* Modal: บันทึกความรู้สึก */}
       <Modal open={openMood} onClose={() => setOpenMood(false)} title="บันทึกความรู้สึก">
