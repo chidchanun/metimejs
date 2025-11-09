@@ -107,7 +107,6 @@ export async function POST(request) {
       { status: 200 }
     );
 
-    // ✅ เซ็ต cookie token
     response.cookies.set("auth_token", token, {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production" ? true : false,

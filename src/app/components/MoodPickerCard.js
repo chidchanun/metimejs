@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const MOODS = [
   { id: 1, emoji: "😊", text: "วันนี้ดีดี๊" },
@@ -9,7 +9,48 @@ const MOODS = [
 ];
 
 export default function MoodPickerCard({ onSubmit }) {
-  const [selected, setSelected] = useState(null);
+
+  const [selected, setSelected] = useState();
+  const [emotion, setEmotion] = useState({})
+  const [tokenValue, setTokenValue] = useState()
+
+
+  useEffect(() => {
+
+    const tokenCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth_token=")); 
+
+    const token = decodeURIComponent(tokenCookie.split("=")[1]);
+    setTokenValue(token)
+
+    async function resEmotion() {
+      const resEmotion = await fetch("/api/v1/emotion", {
+        method: "GET"
+      })
+
+      const Emotion = await resEmotion.json()
+      setEmotion(Emotion)
+    }
+
+    resEmotion()
+  }, [])
+
+  async function handleSaveEmotion() {
+ 
+    const sendEmotion = await fetch("/api/v1/emotion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body : JSON.stringify({
+        token : tokenValue,
+        emotion_id : selected
+      })
+    })
+
+    if (sendEmotion.status === 400 || sendEmotion.status === 500) {
+      return;
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -19,16 +60,15 @@ export default function MoodPickerCard({ onSubmit }) {
       </div>
 
       <div className="space-y-3">
-        {MOODS.map((m) => (
+        {emotion.result?.map((m) => (
           <button
-            key={m.id}                         // ✅ key ถูก
+            key={m.emotion_id}
             type="button"
-            onClick={() => setSelected(m.id)}  // ✅ เก็บ id
+            onClick={() => setSelected(m.emotion_id)}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white border transition
-              ${selected === m.id ? "border-sky-600 ring-2 ring-sky-200" : "border-slate-200 hover:bg-slate-50"}`}
+      ${selected === m.emotion_id ? "border-sky-600 ring-2 ring-sky-200" : "border-slate-200 hover:bg-slate-50"}`}
           >
-            <span className="text-2xl">{m.emoji}</span>
-            <span className="text-base font-medium text-slate-700">{m.text}</span>
+            <span className="text-base font-medium text-slate-700">{m.emotion_name}</span>
           </button>
         ))}
       </div>
@@ -36,7 +76,7 @@ export default function MoodPickerCard({ onSubmit }) {
       <div className="pt-2">
         <button
           type="button"
-          onClick={() => selected && onSubmit?.(selected)} // ✅ ส่ง id ไปเป็น emotion_id
+          onClick={() => handleSaveEmotion()} // ✅ ส่ง id ไปเป็น emotion_id
           disabled={!selected}
           className="w-full rounded-xl bg-slate-900 text-white py-2.5 font-medium hover:opacity-90 disabled:opacity-50"
         >
