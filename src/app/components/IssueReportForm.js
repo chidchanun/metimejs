@@ -3,20 +3,9 @@
 import { useMemo, useRef, useState } from "react";
 
 /**
- * IssueReportForm — แบบฟอร์ม "รายงานปัญหา" ในรูปแบบคอมโพเนนต์
- * 
- * Props:
- * - categories: Array<{ id: number|string, name: string }>
- * - onSubmitted?: (result:any) => void      // เรียกเมื่อส่งสำเร็จ
- * - endpoint?: string                       // ค่าเริ่มต้น "/api/issues"
- * - maxFiles?: number                       // จำนวนไฟล์แนบสูงสุด (default: 5)
- * - maxFileSizeMB?: number                  // ขนาดไฟล์สูงสุดต่อไฟล์ (MB) default: 2
- * - accept?: string                         // mimetype ที่รับ (default: "image/jpeg,image/png")
- * - className?: string
- *
- * การส่งข้อมูล: ใช้ FormData เพื่อรองรับไฟล์แนบ
- *   fields: categoryId, mood, occurredAt, location, details
- *   files: files[] (หลายไฟล์)
+ * ฟอร์มรายงานปัญหา — ส่ง multipart/form-data
+ * fields: categoryId, mood, occurredAt, location, details, token
+ * files:  files (แนบได้หลายไฟล์; เซิร์ฟเวอร์จะใช้ไฟล์แรกเป็น image_url)
  */
 export default function IssueReportForm({
   categories = [
@@ -35,7 +24,7 @@ export default function IssueReportForm({
   className,
 }) {
   const [categoryId, setCategoryId] = useState("");
-  const [mood, setMood] = useState(""); // "very_good" | "good" | "neutral" | "bad" | "very_bad"
+  const [mood, setMood] = useState("");
   const [occurredAt, setOccurredAt] = useState("");
   const [location, setLocation] = useState("");
   const [details, setDetails] = useState("");
@@ -77,7 +66,7 @@ export default function IssueReportForm({
 
     const merged = [...files, ...next].slice(0, maxFiles);
     setFiles(merged);
-    if (fileInputRef.current) fileInputRef.current.value = ""; // reset input
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function removeFile(idx) {
@@ -98,20 +87,23 @@ export default function IssueReportForm({
 
     setLoading(true);
     try {
+      // ดึง token จาก localStorage ตามที่ต้องการ
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) {
+        setLoading(false);
+        return setError("โปรดเข้าสู่ระบบใหม่อีกครั้ง");
+      }
+
       const fd = new FormData();
       fd.append("categoryId", String(categoryId));
       fd.append("mood", mood);
-      fd.append("occurredAt", occurredAt);
+      fd.append("occurredAt", occurredAt); // YYYY-MM-DD
       if (location) fd.append("location", location);
       fd.append("details", details);
-      // แนบไฟล์ (ถ้ามี)
-      files.forEach((f) => fd.append("files", f));
+      fd.append("token", token);
+      files.forEach((f) => fd.append("files", f)); // แนบไฟล์ทั้งหมด
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: fd,
-      });
-
+      const res = await fetch(endpoint, { method: "POST", body: fd });
       let data = null;
       try { data = await res.json(); } catch {}
 
@@ -120,7 +112,7 @@ export default function IssueReportForm({
         setError(msg);
       } else {
         setOkMsg("ส่งรายงานสำเร็จ ขอบคุณที่แจ้งให้เราทราบ");
-        // รีเซ็ตฟอร์ม
+        // reset
         setCategoryId("");
         setMood("");
         setOccurredAt("");
@@ -137,7 +129,10 @@ export default function IssueReportForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className={`rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm ${className||""}`}>
+    <form
+      onSubmit={onSubmit}
+      className={`rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm ${className || ""}`}
+    >
       {/* Category */}
       <label className="block text-sm font-medium text-slate-800">คุณไปเจอปัญหาแบบไหนมา</label>
       <div className="mt-2">
@@ -211,7 +206,9 @@ export default function IssueReportForm({
 
       {/* Files */}
       <div className="mt-5">
-        <label className="block text-sm font-medium text-slate-800 mb-1">ถ้าคุณมีรูปภาพ/วิดีโอหลักฐานโปรดแนบมาให้เราพร้อด้วย (ถ้ามี)</label>
+        <label className="block text-sm font-medium text-slate-800 mb-1">
+          ถ้าคุณมีรูปภาพ/วิดีโอหลักฐานโปรดแนบมาให้เราพร้อมด้วย (ถ้ามี)
+        </label>
         <input
           ref={fileInputRef}
           type="file"
@@ -220,13 +217,19 @@ export default function IssueReportForm({
           onChange={onPickFiles}
           className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border file:border-slate-300 file:bg-white file:px-3 file:py-2 file:text-sm file:hover:bg-slate-50"
         />
-        <div className="mt-1 text-xs text-slate-500">อนุญาตเฉพาะ JPG, JPEG, PNG • ไม่เกิน {maxFileSizeMB}MB ต่อไฟล์ • สูงสุด {maxFiles} ไฟล์</div>
+        <div className="mt-1 text-xs text-slate-500">
+          อนุญาตเฉพาะ JPG, JPEG, PNG • ไม่เกิน {maxFileSizeMB}MB ต่อไฟล์ • สูงสุด {maxFiles} ไฟล์
+        </div>
         {files.length > 0 && (
           <ul className="mt-3 space-y-2 text-sm">
             {files.map((f, idx) => (
               <li key={idx} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                <span className="truncate">{f.name} <span className="text-xs text-slate-500">({(f.size/1024/1024).toFixed(2)} MB)</span></span>
-                <button type="button" onClick={() => removeFile(idx)} className="text-slate-600 hover:text-slate-900">ลบ</button>
+                <span className="truncate">
+                  {f.name} <span className="text-xs text-slate-500">({(f.size/1024/1024).toFixed(2)} MB)</span>
+                </span>
+                <button type="button" onClick={() => removeFile(idx)} className="text-slate-600 hover:text-slate-900">
+                  ลบ
+                </button>
               </li>
             ))}
           </ul>
@@ -234,12 +237,8 @@ export default function IssueReportForm({
       </div>
 
       {/* Alerts */}
-      {error && (
-        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
-      {okMsg && (
-        <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{okMsg}</div>
-      )}
+      {error && <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {okMsg && <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{okMsg}</div>}
 
       <div className="mt-6">
         <button
