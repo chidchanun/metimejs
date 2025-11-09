@@ -14,7 +14,6 @@ export default function MoodPickerCard({ onSubmit }) {
   const [emotion, setEmotion] = useState({})
   const [tokenValue, setTokenValue] = useState()
 
-
   useEffect(() => {
 
     const tokenCookie = document.cookie
