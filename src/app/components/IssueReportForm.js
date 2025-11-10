@@ -8,7 +8,7 @@ import { getToken } from "../utils/getToken";
  * ฟอร์มรายงานปัญหา (JavaScript)
  * - หน้าตา/ลำดับฟิลด์ใกล้เคียงภาพตัวอย่าง
  * - ปุ่มการ์ดอีโมจิสำหรับระดับความรุนแรง
- * - รองรับเลือกวันที่พบปัญหา (ไม่บังคับ)
+ * - รองรับเลือกวันที่พบปัญหา (ไม่บังคับ) + ใส่เวลาเพิ่ม (ไม่บังคับ)
  */
 export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitted }) {
   // ตัวเลือกจากฐานข้อมูล
@@ -22,6 +22,8 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
   const [problemSevere, setProblemSevere] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [happenedAt, setHappenedAt] = useState(""); // yyyy-mm-dd จาก input[type=date]
+  const [showTime, setShowTime] = useState(false); // NEW: เปิด/ปิดช่องเวลา
+  const [happenedTime, setHappenedTime] = useState(""); // NEW: HH:mm จาก input[type=time]
 
   // สถานะทั่วไป
   const [loading, setLoading] = useState(false);
@@ -83,10 +85,17 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
 
     const token = await getToken();
 
-    // หากผู้ใช้ระบุวันที่พบปัญหา ใช้ค่านั้น มิฉะนั้นใช้เวลาปัจจุบัน
-    const reportedAt = happenedAt
-      ? new Date(happenedAt + "T00:00:00").toISOString()
-      : new Date().toISOString();
+    // หากผู้ใช้ระบุวันที่ ใช้วันนั้น + เวลา (ถ้าเลือก) ไม่งั้นใช้ 00:00 ของวันนั้น
+    // ถ้าไม่ระบุวันเลย ใช้เวลาปัจจุบัน
+    let reportedAt;
+    if (happenedAt) {
+      const timePart = showTime && happenedTime ? happenedTime : "00:00"; // NEW
+      // ประกอบเป็น local datetime ก่อนคอนเวิร์ตเป็น ISO (UTC)
+      const dt = new Date(`${happenedAt}T${timePart}:00`); // NEW
+      reportedAt = dt.toISOString();
+    } else {
+      reportedAt = new Date().toISOString();
+    }
 
     const payload = {
       description,
@@ -123,6 +132,8 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       setProblemSevere("");
       setImageUrl("");
       setHappenedAt("");
+      setShowTime(false); // NEW
+      setHappenedTime(""); // NEW
 
       onSubmitted?.();
     } catch (e) {
@@ -203,17 +214,44 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
         <p className="text-xs text-slate-400">แตะเพื่อเลือก 1 รายการ</p>
       </div>
 
-      {/* 3) วันที่เจอปัญหา */}
+      {/* 3) วันที่เจอปัญหา + ปุ่มใส่เวลา */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700">
-          คุณเจอปัญหาวันไหน
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-medium text-slate-700">
+            คุณเจอปัญหาวันไหน
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowTime((v) => !v)} // NEW
+            className="text-xs rounded-lg border border-slate-300 px-2 py-1 hover:bg-slate-50"
+          >
+            {showTime ? "เอาเวลาออก" : "ใส่เวลาเพิ่ม"} {/* NEW */}
+          </button>
+        </div>
         <input
           type="date"
           className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-300"
           value={happenedAt}
           onChange={(e) => setHappenedAt(e.target.value)}
         />
+
+        {showTime && ( // NEW: ช่องเวลา
+          <div className="mt-2">
+            <label className="block text-xs text-slate-600 mb-1">
+              เวลา (ไม่บังคับ)
+            </label>
+            <input
+              type="time"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-300"
+              value={happenedTime}
+              onChange={(e) => setHappenedTime(e.target.value)}
+              step={60} // นาทีละ 1 // NEW
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              ถ้าไม่ใส่เวลาจะใช้เวลา 00:00 ของวันที่เลือก
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 4) สถานที่ */}

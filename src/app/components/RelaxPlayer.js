@@ -11,7 +11,32 @@ const formatTime = (sec) => {
 
 export default function RelaxPlayer({ playlist = [] }) {
   const audioRef = useRef(null);
-  const progressRef = useRef(null);
+  const [songs, setSongs] = useState([]);
+
+  // โหลดเพลงจาก API (ถ้ามี)
+  useEffect(() => {
+    async function loadSongs() {
+      try {
+        const res = await fetch("/api/v1/song", { cache: "no-store" });
+        const data = await res.json();
+        setSongs(
+          (data?.res ?? []).map((s) => ({
+            id: s.id,
+            title: s.song_name,
+            artist: "Metime",
+            src: s.song_url,
+            cover: s.cover_url ?? "/relax/covers/default.jpg",
+          }))
+        );
+      } catch (e) {
+        console.error("โหลดเพลงล้มเหลว:", e);
+      }
+    }
+    loadSongs();
+  }, []);
+
+  // ใช้ list เดียวสำหรับเล่นเพลง (ถ้าโหลดจาก API ได้จะใช้ songs แทน)
+  const list = songs.length ? songs : playlist;
 
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,38 +46,41 @@ export default function RelaxPlayer({ playlist = [] }) {
   const [isLoop, setIsLoop] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
 
-  const current = playlist[index];
+  // ถ้าความยาว list เปลี่ยน ให้รีเซ็ต index ให้อยู่ในช่วง
+  useEffect(() => {
+    if (!list.length) return;
+    setIndex((i) => (i >= list.length ? 0 : i));
+  }, [list.length]);
+
+  const current = list[index];
 
   const nextIndex = useMemo(() => {
-    if (!playlist.length) return 0;
+    if (!list.length) return 0;
     if (isShuffle) {
-      let r = Math.floor(Math.random() * playlist.length);
-      // ไม่ให้ซ้ำเพลงเดิมบ่อยๆ
-      if (r === index && playlist.length > 1) {
-        r = (r + 1) % playlist.length;
-      }
+      let r = Math.floor(Math.random() * list.length);
+      if (r === index && list.length > 1) r = (r + 1) % list.length;
       return r;
     }
-    return (index + 1) % playlist.length;
-  }, [index, isShuffle, playlist.length]);
+    return (index + 1) % list.length;
+  }, [index, isShuffle, list.length]);
 
+  // จัดการอีเวนต์ของ <audio>
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.volume = volume;
-
-    const onLoaded = () => setDuration(audio.duration || 0);
-    const onTime = () => setCurrentTime(audio.currentTime || 0);
+    const onLoaded = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const onTime = () => setCurrentTime(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
     const onEnded = () => {
       if (isLoop) {
         audio.currentTime = 0;
-        audio.play();
+        audio.play().catch(() => setIsPlaying(false));
       } else {
         setIndex(nextIndex);
       }
     };
 
+    audio.volume = volume;
     audio.addEventListener("loadedmetadata", onLoaded);
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("ended", onEnded);
@@ -61,15 +89,41 @@ export default function RelaxPlayer({ playlist = [] }) {
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("ended", onEnded);
     };
-  }, [isLoop, nextIndex]);
+  }, [isLoop, nextIndex, volume]);
 
+  // เมื่อเปลี่ยนเพลง/เปลี่ยน src ให้บังคับโหลดไฟล์ใหม่ แล้วเล่นต่อถ้าอยู่ในสถานะเล่น
   useEffect(() => {
-    // เล่นอัตโนมัติเมื่อเปลี่ยนเพลงถ้ากำลังเล่นอยู่
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !current?.src) return;
+    setCurrentTime(0);
+    setDuration(0);
     audio.loop = isLoop;
-    if (isPlaying) audio.play().catch(() => setIsPlaying(false));
-  }, [index, isLoop, isPlaying]);
+    audio.load(); // สำคัญ: บังคับให้ <audio> โหลด src ใหม่
+    if (isPlaying) {
+      audio.play().catch(() => setIsPlaying(false));
+    }
+  }, [current?.src, isLoop, isPlaying]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === "ArrowLeft") {
+        const audio = audioRef.current;
+        if (audio) audio.currentTime = Math.max(0, audio.currentTime - 5);
+      } else if (e.key === "ArrowRight") {
+        const audio = audioRef.current;
+        if (audio && Number.isFinite(audio.duration)) {
+          audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const togglePlay = async () => {
     const audio = audioRef.current;
@@ -103,34 +157,16 @@ export default function RelaxPlayer({ playlist = [] }) {
   };
 
   const prev = () => {
-    setIndex((i) => (i - 1 + playlist.length) % playlist.length);
+    if (!list.length) return;
+    setIndex((i) => (i - 1 + list.length) % list.length);
   };
 
   const next = () => {
+    if (!list.length) return;
     setIndex(nextIndex);
   };
 
-  // keyboard shortcuts
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === "ArrowLeft") {
-        const audio = audioRef.current;
-        if (audio) audio.currentTime = Math.max(0, audio.currentTime - 5);
-      } else if (e.key === "ArrowRight") {
-        const audio = audioRef.current;
-        if (audio && Number.isFinite(audio.duration)) {
-          audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay]);
-
-  if (!playlist.length) {
+  if (!list.length) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
         ไม่มีเพลงในเพลย์ลิสต์
@@ -155,7 +191,6 @@ export default function RelaxPlayer({ playlist = [] }) {
       {/* progress */}
       <div className="mt-4">
         <input
-          ref={progressRef}
           type="range"
           min={0}
           max={Number.isFinite(duration) ? duration : 0}
@@ -229,11 +264,10 @@ export default function RelaxPlayer({ playlist = [] }) {
         </div>
       </div>
 
-      <audio
-        ref={audioRef}
-        src={current.src}
-        preload="metadata"
-      />
+      <audio ref={audioRef} preload="metadata">
+        <source src={current.src} type="audio/mp4" />
+      </audio>
+
     </div>
   );
 }

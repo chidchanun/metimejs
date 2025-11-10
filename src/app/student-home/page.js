@@ -259,31 +259,8 @@ export default function StudentHome() {
         <section className="mt-6">
           <div className="mb-2 sm:mb-3 font-medium text-black">เปิดเสียงผ่อนคลาย</div>
           <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <RelaxPlayer
-              playlist={[
-                {
-                  id: 1,
-                  title: "Ocean Breath",
-                  artist: "Metime",
-                  src: "/relax/ocean-breath.mp3",
-                  cover: "/relax/covers/ocean.jpg",
-                },
-                {
-                  id: 2,
-                  title: "Forest Whisper",
-                  artist: "Metime",
-                  src: "/relax/forest-whisper.mp3",
-                  cover: "/relax/covers/forest.jpg",
-                },
-                {
-                  id: 3,
-                  title: "Calm Piano",
-                  artist: "Metime",
-                  src: "/relax/calm-piano.mp3",
-                  cover: "/relax/covers/piano.jpg",
-                },
-              ]}
-            />
+            <RelaxPlayer />
+
           </div>
         </section>
 
