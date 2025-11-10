@@ -299,7 +299,7 @@ export default function StudentHome() {
           </QuickButton>
 
           <QuickButton href="/chat" className="bg-slate-900">
-            ไปที่ห้องแชท
+            ห้องแชท AI BigBot
           </QuickButton>
         </div>
 

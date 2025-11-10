@@ -102,7 +102,7 @@ export default function AdminDashboard() {
             <div className="text-sm text-slate-500">เพิ่ม/แก้ไขสิทธิ์ผู้ใช้</div>
           </a>
           <a href="/admin/catalogs" className="rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition">
-            <div className="font-medium">หมวดหมู่/ความรุนแรง/เสียงผ่อนคลาย</div>
+            <div className="font-medium">เพิ่มเสียงผ่อนคลาย</div>
             <div className="text-sm text-slate-500">ตั้งค่าระบบพื้นฐาน</div>
           </a>
           <a href="/dev/issues" className="rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition">
