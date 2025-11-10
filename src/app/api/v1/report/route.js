@@ -83,11 +83,6 @@ export async function POST(request) {
     }
     }
 
-// 🔍 LOG ตรวจสอบ
-    console.log("[/report POST] reported_at จาก client =", reported_at);
-    console.log("[/report POST] dateOnly =", reported_at?.split("T")[0]);
-    console.log("[/report POST] reportedAtParam ที่จะส่งเข้า DB =", reportedAtParam);
-    console.log("[/report POST] ถ้า reportedAtParam เป็น null → จะใช้ NOW(3)");
 
 
 
