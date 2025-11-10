@@ -6,6 +6,7 @@ import RelaxPlayer from "../components/RelaxPlayer";
 import IssueReportForm from "../components/IssueReportForm";
 import MoodPickerCard from "../components/MoodPickerCard";
 import LogoutButton from "../components/LogoutButton";
+import UserReportsList from "../components/UserReportsList";
 
 /**
  * Utilities
@@ -30,21 +31,52 @@ function useMediaQuery(query) {
   return matches;
 }
 
-function QuickButton({ onClick, href, children, className = "" }) {
+// function QuickButton({ onClick, href, children, className = "" }) {
+//   const base =
+//     "rounded-2xl text-white px-4 py-3 text-sm md:text-base hover:opacity-90 shadow-sm transition-opacity active:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300";
+//   if (onClick)
+//     return (
+//       <button onClick={onClick} className={cx(base, className)}>
+//         {children}
+//       </button>
+//     );
+//   return (
+//     <a href={href} className={cx(base, className)}>
+//       {children}
+//     </a>
+//   );
+// }
+
+// ✅ ปรับ QuickButton รองรับ disabled + สไตล์กดไม่ได้
+function QuickButton({ onClick, href, children, className = "", disabled = false }) {
   const base =
     "rounded-2xl text-white px-4 py-3 text-sm md:text-base hover:opacity-90 shadow-sm transition-opacity active:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300";
-  if (onClick)
+  const disabledCls = disabled ? "opacity-50 pointer-events-none cursor-not-allowed" : "";
+
+  if (onClick) {
     return (
-      <button onClick={onClick} className={cx(base, className)}>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={[base, className, disabledCls].join(" ")}
+        aria-disabled={disabled}
+      >
         {children}
       </button>
     );
+  }
   return (
-    <a href={href} className={cx(base, className)}>
+    <a
+      href={href}
+      className={[base, className, disabledCls].join(" ")}
+      aria-disabled={disabled}
+      onClick={(e) => disabled && e.preventDefault()}
+    >
       {children}
     </a>
   );
 }
+
 
 function Modal({ open, onClose, title, children }) {
   const isOpen = !!open;
@@ -185,6 +217,58 @@ export default function StudentHome() {
     very_bad: "bg-rose-500",
   }[m] || "bg-slate-300");
 
+  useEffect(() => {
+    async function loadIssues() {
+      try {
+        // ✅ หยิบ token จาก cookie
+        const tokenCookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("auth_token="));
+
+        if (!tokenCookie) {
+          router.push("/login");
+          return;
+        }
+
+        const token = decodeURIComponent(tokenCookie.split("=")[1]);
+
+        // ✅ เรียก API พร้อมส่ง Header Authorization
+        const res = await fetch("/api/v1/user-report", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        });
+
+        if (res.status === 400 || res.status === 401) {
+          router.push("/login");
+          return;
+        }
+
+        const { result } = await res.json();
+
+        // ✅ Map ให้ตรง UI
+        setMyIssues(
+          result.map((r) => ({
+            id: r.report_id,
+            category: r.problem_type ?? "ไม่ระบุประเภท",
+            severity: r.problem_severe ?? "ไม่ระบุระดับ",
+            place: r.problem_where ?? "-",
+            description: r.description ?? "",
+            imageUrl: r.image_url ?? null,
+            reportedAt: r.reported_at ? new Date(r.reported_at) : null,
+          }))
+        );
+      } catch (err) {
+        console.error("โหลดปัญหาล้มเหลว:", err);
+        setMyIssues([]);
+      }
+    }
+
+    loadIssues();
+  }, []);
+
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
@@ -200,12 +284,15 @@ export default function StudentHome() {
 
         {/* Quick actions */}
         <div className="mt-5 grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
+          {/* // ✅ ตรงปุ่ม "บันทึกความรู้สึก" — ปิดการกดเมื่อกดไปแล้ววันนี้ */}
           <QuickButton
             onClick={() => setOpenMood(true)}
+            disabled={hasMoodToday}
             className={hasMoodToday ? "bg-green-600" : "bg-red-500"}
           >
-            บันทึกความรู้สึก
+            {hasMoodToday ? "บันทึกแล้ววันนี้" : "บันทึกความรู้สึก"}
           </QuickButton>
+
 
           <QuickButton onClick={() => setOpenReport(true)} className="bg-slate-900">
             รายงานปัญหา
@@ -222,12 +309,12 @@ export default function StudentHome() {
           <div className="flex justify-between">
             <div className="font-medium mb-3 sm:mb-4 text-black">อารมณ์ 7 วันที่ผ่านมา</div>
             <div className="flex ">
-              <button onClick={() => setRange(7)} className={`px-3 py-1 rounded text-black ${range === 7 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
+              {/* <button onClick={() => setRange(7)} className={`px-3 py-1 rounded text-black ${range === 7 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
                 7 วัน
               </button>
               <button onClick={() => setRange(30)} className={`px-3 py-1 rounded text-black ${range === 30 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>
                 30 วัน
-              </button>
+              </button> */}
             </div>
 
           </div>
@@ -265,55 +352,15 @@ export default function StudentHome() {
         </section>
 
         {/* My Issues & Chats: วางเป็นกริด 1 คอลัมน์บนมือถือ / 2 คอลัมน์บนจอใหญ่ */}
-        <section className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-            <div className="font-medium mb-3 text-black">ปัญหาที่ฉันรายงาน</div>
-            {loading ? (
-              <div className="text-slate-500">กำลังโหลด...</div>
-            ) : myIssues.length === 0 ? (
-              <div className="text-slate-500 text-sm">
-                ยังไม่มีการรายงาน ลองเริ่มที่ “รายงานปัญหา”
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {myIssues.map((it) => (
-                  <li key={it.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">#{it.id} • {it.category}</div>
-                      <div className="text-xs text-slate-500">สถานะ: {it.status}</div>
-                    </div>
-                    <a href={`/issues/${it.id}`} className="text-sm text-slate-700 underline shrink-0">
-                      เปิดดู
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
 
+        <section className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* แทนกล่องฝั่งซ้ายด้วย */}
+          <UserReportsList className="" />
+
+          {/* กล่องห้องแชทของฉัน เหมือนเดิม */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <div className="font-medium mb-3 text-black">ห้องแชทของฉัน</div>
-            {loading ? (
-              <div className="text-slate-500">กำลังโหลด...</div>
-            ) : myChats.length === 0 ? (
-              <div className="text-slate-500 text-sm">
-                ยังไม่มีห้องแชท เริ่มแชทใหม่ได้ที่หน้า “แชท”
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {myChats.map((c) => (
-                  <li key={c.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{c.topic}</div>
-                      <div className="text-xs text-slate-500">ห้อง #{c.id} • สถานะ: {c.status}</div>
-                    </div>
-                    <a href={`/chat/${c.id}`} className="text-sm text-slate-700 underline shrink-0">
-                      เข้าแชท
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {/* ... เนื้อหาเดิม ... */}
           </div>
         </section>
       </div>
