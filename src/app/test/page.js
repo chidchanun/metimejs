@@ -1,88 +1,124 @@
 "use client";
+import { useState } from "react";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { VerifyToken } from "@/app/utils/VerifyToken";
-import { getToken } from "../utils/getToken";
+export default function UploadSong() {
+  const [songName, setSongName] = useState("");
+  const [songFile, setSongFile] = useState(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [coverFile, setCoverFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-export default function ProtectedPage() {
-    const [songName, setSongName] = useState("");
-    const [file, setFile] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [tokenValue, setTokenValue] = useState(null);
-    const [coverFile, setCoverFile] = useState(null)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!songName || (!songFile && !youtubeUrl)) return alert("กรุณาใส่ชื่อเพลงและไฟล์/URL");
 
-    useEffect(() => {
-        async function fetchToken() {
-            const token = await getToken();
-            setTokenValue(token);
-        }
-        fetchToken();
-    }, []);
+    setLoading(true);
 
-    const handleUpload = async (e) => {
-        e.preventDefault();
-        if (!file || !songName) return alert("กรุณาใส่ชื่อเพลงและเลือกไฟล์");
+    try {
+      const tokenCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth_token="));
+      const token = tokenCookie ? decodeURIComponent(tokenCookie.split("=")[1]) : "";
+      if (!token) return alert("โปรดเข้าสู่ระบบใหม่อีกครั้ง");
 
-        setIsUploading(true);
+      let songUrl = null;
 
+      const formData = new FormData();
+      formData.append("song_name", songName);
+      if (coverFile) formData.append("cover_file", coverFile);
+      formData.append("token", token);
 
-
-        const formData = new FormData();
-        formData.append("song_name", songName);
-        formData.append("file", file);
-        formData.append("token", tokenValue);
-        formData.append("cover_file", coverFile)
-
-        const res = await fetch("/api/v1/song", {
-            method: "POST",
-            body: formData, // ไม่ต้อง JSON.stringify
+      // ------------------ ถ้าเป็น YouTube URL ------------------
+      if (youtubeUrl) {
+        const resYT = await fetch("/api/v1/download-youtube", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: youtubeUrl })
         });
-
-        const data = await res.json();
-        setIsUploading(false);
-
-        if (data.message === "ok") {
-            alert("อัปโหลดเพลงสำเร็จ!");
-            setSongName("");
-            setFile(null);
-        } else {
-            alert("อัปโหลดไม่สำเร็จ: " + data.error);
+        const dataYT = await resYT.json();
+        if (dataYT.message !== "ok") {
+          setLoading(false);
+          return alert(dataYT.message);
         }
-    };
+        formData.append("song_url", dataYT.song_url); // ส่ง path จาก download-youtube
+      } else if (songFile) {
+        // ------------------ ถ้าเป็นไฟล์ ------------------
+        formData.append("file", songFile);
+      }
 
-    return (
-        <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded-2xl text-black">
-            <h1 className="text-2xl font-bold mb-4">🎧 Upload Song</h1>
-            <form onSubmit={handleUpload} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium mb-1">ชื่อเพลง</label>
-                    <input
-                        type="text"
-                        className="w-full border p-2 rounded"
-                        value={songName}
-                        onChange={(e) => setSongName(e.target.value)}
-                    />
-                </div>
+      // ส่งไปบันทึก DB
+      const resDB = await fetch("/api/v1/song", { method: "POST", body: formData });
+      const dataDB = await resDB.json();
+      if (dataDB.message !== "ok") {
+        setLoading(false);
+        return alert(dataDB.message);
+      }
 
-                <div>
-                    <label className="block text-sm font-medium mb-1">เลือกไฟล์เพลง</label>
-                    <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={(e) => setFile(e.target.files[0])}
-                        className="w-full border p-2 rounded"
-                    />
-                </div>
+      songUrl = dataDB.song_url;
+      alert("อัปโหลดเพลงเรียบร้อย: " + songUrl);
 
-                <button
-                    type="submit"
-                    disabled={isUploading}
-                    className="w-full bg-sky-500 text-white py-2 rounded hover:bg-sky-600"
-                >
-                    {isUploading ? "กำลังอัปโหลด..." : "อัปโหลด"}
-                </button>
-            </form>
-        </div>
-    );
+      // เคลียร์ค่า
+      setSongName("");
+      setSongFile(null);
+      setYoutubeUrl("");
+      setCoverFile(null);
+
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาด");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto mt-10 p-4 border rounded">
+      <input
+        type="text"
+        placeholder="ชื่อเพลง"
+        value={songName}
+        onChange={(e) => setSongName(e.target.value)}
+        className="w-full p-2 border rounded"
+      />
+
+      <div>
+        <label className="block mb-1 font-medium">อัปโหลดไฟล์เพลง (mp3, m4a, mp4)</label>
+        <input
+          type="file"
+          accept="audio/*,video/*"
+          onChange={(e) => setSongFile(e.target.files[0])}
+          className="w-full"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium">หรือใส่ URL YouTube</label>
+        <input
+          type="text"
+          placeholder="URL YouTube"
+          value={youtubeUrl}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1 font-medium">อัปโหลด Cover (ถ้ามี)</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setCoverFile(e.target.files[0])}
+          className="w-full"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        {loading ? "กำลังอัปโหลด..." : "อัปโหลดเพลง"}
+      </button>
+    </form>
+  );
 }
