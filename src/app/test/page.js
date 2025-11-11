@@ -40,7 +40,9 @@ export default function UploadSong() {
           setLoading(false);
           return alert(dataYT.message);
         }
+        console.log(dataYT)
         formData.append("song_url", dataYT.song_url); // ส่ง path จาก download-youtube
+        formData.append("thumbnail_url" ,dataYT.thumbnail_url); // ส่ง path จาก download-youtube
       } else if (songFile) {
         // ------------------ ถ้าเป็นไฟล์ ------------------
         formData.append("file", songFile);
