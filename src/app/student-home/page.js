@@ -301,6 +301,9 @@ export default function StudentHome() {
           <QuickButton href="/chat" className="bg-slate-900">
             ห้องแชท AI BigBot
           </QuickButton>
+          <QuickButton href="/chat" className="bg-slate-900">
+            ห้องแชท ฝ่ายพัฒนา
+          </QuickButton>
         </div>
 
 
