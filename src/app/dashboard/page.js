@@ -26,24 +26,62 @@ function StatusBadge({ s }) {
   );
 }
 
+function fmtThai(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleString("th-TH", { dateStyle: "short", timeStyle: "short" });
+}
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ students: 0, openIssues: 0, escalatedChats: 0 });
   const [issues, setIssues] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // TODO: เปลี่ยนเป็น fetch('/api/admin/overview')
-    // Mock data
-    setTimeout(() => {
-      setStats({ students: 1240, openIssues: 18, escalatedChats: 7 });
-      setIssues([
-        { id: 101, anon: "#ANON-4821", category: "การเรียน", severity: "สูง", status: "รอดำเนินการ", created_at: "2025-11-05 10:12" },
-        { id: 102, anon: "#ANON-3912", category: "การเงิน", severity: "กลาง", status: "ยังไม่ดำเนินการ", created_at: "2025-11-05 09:40" },
-        { id: 103, anon: "#ANON-1055", category: "สุขภาพจิต", severity: "ฉุกเฉิน", status: "รอดำเนินการ", created_at: "2025-11-04 22:31" },
-        { id: 104, anon: "#ANON-9981", category: "อื่นๆ", severity: "ต่ำ", status: "เรียบร้อย", created_at: "2025-11-04 18:00" },
-      ]);
-      setLoading(false);
-    }, 400);
+    let alive = true;
+    async function load() {
+      setLoading(true);
+      setError("");
+      try {
+        // ดึงข้อมูลจริงจาก API
+        const res = await fetch("http://localhost:3000/api/v1/report", {
+          method: "GET",
+          // ปิด cache ให้เห็นรายการล่าสุดเสมอ (โดยเฉพาะเวลา dev)
+          cache: "no-store",
+          headers: { "Accept": "application/json" },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const rows = Array.isArray(data?.result) ? data.result : [];
+        const mapped = rows.map((r) => ({
+          id: r.report_id ?? r.id ?? 0,
+          anon: r.anon_id || r.student_code || r.reporter || "-",
+          category: r.problem_type || r.category || "-",
+          severity: r.problem_severe || r.severity || "-",
+          status: r.status || r.report_status || "ยังไม่ระบุ",
+          created_at: fmtThai(r.reported_at || r.created_at),
+        }));
+
+        if (!alive) return;
+        setIssues(mapped);
+        const openIssues = mapped.filter((m) => m.status !== "เรียบร้อย").length;
+        setStats((s) => ({ ...s, openIssues }));
+      } catch (e) {
+        if (!alive) return;
+        setError(e?.message || "โหลดข้อมูลไม่สำเร็จ");
+        setIssues([]);
+        setStats((s) => ({ ...s, openIssues: 0 }));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   return (
@@ -59,10 +97,17 @@ export default function AdminDashboard() {
         </div>
 
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-4">
+          <div className="border-b border-slate-200 p-4 flex items-center justify-between">
             <div className="font-medium">ปัญหาที่รายงานล่าสุด</div>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-xs rounded-full border px-3 py-1 hover:bg-slate-50"
+            >รีเฟรช</button>
           </div>
           <div className="overflow-x-auto p-4">
+            {error ? (
+              <div className="text-sm text-red-600">{error}</div>
+            ) : null}
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-slate-500">
@@ -101,7 +146,7 @@ export default function AdminDashboard() {
             <div className="font-medium">จัดการผู้ใช้/บทบาท</div>
             <div className="text-sm text-slate-500">เพิ่ม/แก้ไขสิทธิ์ผู้ใช้</div>
           </a>
-          <a href="/admin/catalogs" className="rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition">
+          <a href="/song" className="rounded-2xl border border-slate-200 bg-white p-5 hover:shadow-md transition">
             <div className="font-medium">เพิ่มเสียงผ่อนคลาย</div>
             <div className="text-sm text-slate-500">ตั้งค่าระบบพื้นฐาน</div>
           </a>
