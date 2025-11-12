@@ -19,15 +19,17 @@ export default function RelaxPlayer({ playlist = [] }) {
       try {
         const res = await fetch("/api/v1/song", { cache: "no-store" });
         const data = await res.json();
+        console.log(data)
         setSongs(
           (data?.res ?? []).map((s) => ({
             id: s.id,
             title: s.song_name,
             artist: "Metime",
             src: s.song_url,
-            cover: s.cover_url ?? "/relax/covers/default.jpg",
+            cover: s.cover_url ?? s.thumbnail_url ?? "/relax/covers/default.jpg",
           }))
         );
+        console.log(songs)
       } catch (e) {
         console.error("โหลดเพลงล้มเหลว:", e);
       }
