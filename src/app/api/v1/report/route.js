@@ -121,7 +121,8 @@ import { db } from "@/app/lib/db";
 import fs from "fs";
 import path from "path";
 
-const uploadDir = path.join(process.cwd(), "public", "uploads");
+const uploadDir = path.join(process.cwd(), "public/uploads/report_image");
+
 
 export async function GET() {
   try {
@@ -146,45 +147,44 @@ export async function GET() {
   }
 }
 
+
+
 export async function POST(request) {
   try {
-    // ✅ ใช้ JSON เหมือนเดิม
-    const body = await request.json();
-    const {
-      description,
-      problem_where,
-      problem_type,
-      problem_severe,
-      image_url,
-      reported_at,
-      token,
-    } = body;
-    console.log(image_url)
-    if (!token) {
-      return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 });
-    }
+    const formData = await request.formData(); // ✅ FormData
+    const description = formData.get("description");
+    const problem_where = formData.get("problem_where");
+    const problem_type = formData.get("problem_type");
+    const problem_severe = formData.get("problem_severe");
+    const reported_at = formData.get("reported_at");
+    const token = formData.get("token");
+    const image = formData.get("image"); // ไฟล์จริง
+
+    if (!token) return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 });
 
     const [rows] = await db.query("SELECT * FROM user_tokens WHERE token = ?", [token]);
-    if (rows.length === 0) {
-      return NextResponse.json({ message: "ไม่พบผู้ใช้งาน โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 });
-    }
+    if (rows.length === 0) return NextResponse.json({ message: "ไม่พบผู้ใช้งาน" }, { status: 400 });
 
     const userToken = rows[0];
-    const expiresTime = new Date(userToken.token_expires).getTime();
-    if (expiresTime < Date.now()) {
-      return NextResponse.json({ message: "หมดเวลาใช้งาน โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 });
-    }
+    if (new Date(userToken.token_expires).getTime() < Date.now())
+      return NextResponse.json({ message: "หมดเวลาใช้งาน" }, { status: 400 });
 
     const [row_users] = await db.query("SELECT * FROM users WHERE id = ?", [userToken.user_id]);
-    if (row_users.length === 0) {
-      return NextResponse.json({ message: "ไม่พบผู้ใช้งาน โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 });
-    }
+    if (row_users.length === 0) return NextResponse.json({ message: "ไม่พบผู้ใช้งาน" }, { status: 400 });
 
-    if (!description || !problem_type || !problem_severe) {
+    if (!description || !problem_type || !problem_severe)
       return NextResponse.json({ message: "โปรดกรอกข้อมูลให้ครบถ้วน" }, { status: 400 });
+
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+    let imagePath = null;
+    if (image && image.size > 0) {
+      const buffer = Buffer.from(await image.arrayBuffer());
+      const fileName = Date.now() + "_ReportImage_" + image.name.replace(/[<>:"/\\|?*&]/g, "_");
+      imagePath = `/uploads/report_image/${fileName}`;
+      fs.writeFileSync(path.join(uploadDir, fileName), buffer);
     }
 
-    // ✅ แปลงวันที่ให้รองรับ ISO (จาก client)
     let reportedAtParam = null;
     if (reported_at) {
       const dt = new Date(reported_at);
@@ -200,30 +200,19 @@ export async function POST(request) {
       }
     }
 
-    // ✅ แปลงค่าที่เป็น string ให้เป็น number เพื่อให้ MySQL รับได้แน่นอน
     const typeNum = Number(problem_type);
     const severeNum = Number(problem_severe);
 
-    // ✅ INSERT ข้อมูล
     const [result] = await db.query(
       `INSERT INTO report
         (description, problem_where, problem_type, problem_severe, image_url, reported_at)
        VALUES (?, ?, ?, ?, ?, COALESCE(?, NOW(3)))`,
-      [
-        description,
-        problem_where || null,
-        typeNum,
-        severeNum,
-        image_url || null,
-        reportedAtParam,
-      ]
+      [description, problem_where || null, typeNum, severeNum, imagePath, reportedAtParam]
     );
-
-    const insertedId = result.insertId;
 
     await db.query("INSERT INTO user_report (user_id, report_id) VALUES (?, ?)", [
       row_users[0].id,
-      insertedId,
+      result.insertId,
     ]);
 
     return NextResponse.json({ message: "ok" }, { status: 200 });

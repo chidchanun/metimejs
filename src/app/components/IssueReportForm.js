@@ -84,38 +84,34 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
     }
 
     const token = await getToken();
-    
 
-    // หากผู้ใช้ระบุวันที่ ใช้วันนั้น + เวลา (ถ้าเลือก) ไม่งั้นใช้ 00:00 ของวันนั้น
-    // ถ้าไม่ระบุวันเลย ใช้เวลาปัจจุบัน
     let reportedAt;
     if (happenedAt) {
-      const timePart = showTime && happenedTime ? happenedTime : "00:00"; // NEW
-      // ประกอบเป็น local datetime ก่อนคอนเวิร์ตเป็น ISO (UTC)
-      const dt = new Date(`${happenedAt}T${timePart}:00`); // NEW
+      const timePart = showTime && happenedTime ? happenedTime : "00:00";
+      const dt = new Date(`${happenedAt}T${timePart}:00`);
       reportedAt = dt.toISOString();
     } else {
       reportedAt = new Date().toISOString();
     }
 
-    const payload = {
-      description,
-      problem_where: problemWhere || null,
-      problem_type: Number(problemType),
-      problem_severe: Number(problemSevere),
-      image_url: imageUrl || null,
-      reported_at: reportedAt,
-      token,
-    };
+    // สร้าง FormData
+    const formData = new FormData();
+    formData.append("description", description);
+    formData.append("problem_where", problemWhere || "");
+    formData.append("problem_type", problemType);
+    formData.append("problem_severe", problemSevere);
+    formData.append("reported_at", reportedAt);
+    formData.append("token", token);
 
-    console.log("PAYLOAD ที่ส่ง:", payload);
+    if (file) {
+      formData.append("image", file); // ส่งไฟล์จริง
+    }
 
     setLoading(true);
     try {
       const res = await fetch(endpoint || "/api/v1/report", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData, // ✅ FormData
       });
 
       const data = await res.json();
@@ -126,16 +122,14 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       }
 
       setOk("ส่งรายงานสำเร็จ");
-      // ล้างฟอร์ม
       setDescription("");
       setProblemWhere("");
       setProblemType("");
       setProblemSevere("");
-      setImageUrl("");
+      setFile(null);
       setHappenedAt("");
-      setShowTime(false); // NEW
-      setHappenedTime(""); // NEW
-
+      setShowTime(false);
+      setHappenedTime("");
       onSubmitted?.();
     } catch (e) {
       console.error(e);
@@ -144,6 +138,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       setLoading(false);
     }
   }
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">

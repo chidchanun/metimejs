@@ -25,7 +25,6 @@ wss.on("connection", (ws) => {
           botId: "BBOT2025110001",
         };
 
-        console.log(bodyData)
 
         const res = await fetch(API_URL, {
           method: "POST",
@@ -37,7 +36,6 @@ wss.on("connection", (ws) => {
         });
 
         const result = await res.json();
-        console.log("🤖 API Response:", result);
 
         const aiReply = result
 
@@ -50,7 +48,6 @@ wss.on("connection", (ws) => {
         );
       }
     } catch (err) {
-      console.error("❌ Error:", err);
       ws.send(
         JSON.stringify({
           type: "error",
