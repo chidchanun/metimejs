@@ -7,6 +7,7 @@ import IssueReportForm from "../components/IssueReportForm";
 import MoodPickerCard from "../components/MoodPickerCard";
 import LogoutButton from "../components/LogoutButton";
 import UserReportsList from "../components/UserReportsList";
+import ChatComponent from "../components/ChatComponent";
 
 /**
  * Utilities
@@ -152,6 +153,8 @@ export default function StudentHome() {
   const [hasMoodToday, setHasMoodToday] = useState(false);
   const [openMood, setOpenMood] = useState(false);
   const [range, setRange] = useState(7);
+  const [openChatAI, setOpenChatAI] = useState(false);
+  const [openChatDev, setOpenChatDev] = useState(false);
 
 
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -298,9 +301,14 @@ export default function StudentHome() {
             รายงานปัญหา
           </QuickButton>
 
-          <QuickButton href="/chat" className="bg-slate-900">
+          <QuickButton onClick={() => setOpenChatAI(true)} className="bg-slate-900">
             ห้องแชท AI BigBot
           </QuickButton>
+
+          {/* <QuickButton href="/chat" className="bg-slate-900">
+            ห้องแชท AI BigBot
+          </QuickButton> */}
+
           <QuickButton href="/chat" className="bg-slate-900">
             ห้องแชท ฝ่ายพัฒนา
           </QuickButton>
@@ -399,6 +407,13 @@ export default function StudentHome() {
             setOpenMood(false);
           }}
         />
+      </Modal>
+
+      {/* Modal: ห้องแชท AI BigBot */}
+      <Modal open={openChatAI} onClose={() => setOpenChatAI(false)} title="ห้องแชท AI BigBot">
+        <div className="h-[70vh]">
+          <ChatComponent />
+        </div>
       </Modal>
     </main>
   );

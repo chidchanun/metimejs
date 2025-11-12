@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const formatTime = (sec) => {
@@ -9,17 +8,16 @@ const formatTime = (sec) => {
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
-export default function RelaxPlayer({ playlist = [] }) {
+// ✅ เอากรอบ/พื้นหลัง/เงาออก และรองรับ className จากภายนอก
+export default function RelaxPlayer({ playlist = [], className = "" }) {
   const audioRef = useRef(null);
   const [songs, setSongs] = useState([]);
 
-  // โหลดเพลงจาก API (ถ้ามี)
   useEffect(() => {
     async function loadSongs() {
       try {
         const res = await fetch("/api/v1/song", { cache: "no-store" });
         const data = await res.json();
-        console.log(data)
         setSongs(
           (data?.res ?? []).map((s) => ({
             id: s.id,
@@ -29,7 +27,6 @@ export default function RelaxPlayer({ playlist = [] }) {
             cover: s.cover_url ?? s.thumbnail_url ?? "/relax/covers/default.jpg",
           }))
         );
-        console.log(songs)
       } catch (e) {
         console.error("โหลดเพลงล้มเหลว:", e);
       }
@@ -37,7 +34,6 @@ export default function RelaxPlayer({ playlist = [] }) {
     loadSongs();
   }, []);
 
-  // ใช้ list เดียวสำหรับเล่นเพลง (ถ้าโหลดจาก API ได้จะใช้ songs แทน)
   const list = songs.length ? songs : playlist;
 
   const [index, setIndex] = useState(0);
@@ -48,7 +44,6 @@ export default function RelaxPlayer({ playlist = [] }) {
   const [isLoop, setIsLoop] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
 
-  // ถ้าความยาว list เปลี่ยน ให้รีเซ็ต index ให้อยู่ในช่วง
   useEffect(() => {
     if (!list.length) return;
     setIndex((i) => (i >= list.length ? 0 : i));
@@ -66,7 +61,6 @@ export default function RelaxPlayer({ playlist = [] }) {
     return (index + 1) % list.length;
   }, [index, isShuffle, list.length]);
 
-  // จัดการอีเวนต์ของ <audio>
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -93,20 +87,18 @@ export default function RelaxPlayer({ playlist = [] }) {
     };
   }, [isLoop, nextIndex, volume]);
 
-  // เมื่อเปลี่ยนเพลง/เปลี่ยน src ให้บังคับโหลดไฟล์ใหม่ แล้วเล่นต่อถ้าอยู่ในสถานะเล่น
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !current?.src) return;
     setCurrentTime(0);
     setDuration(0);
     audio.loop = isLoop;
-    audio.load(); // สำคัญ: บังคับให้ <audio> โหลด src ใหม่
+    audio.load();
     if (isPlaying) {
       audio.play().catch(() => setIsPlaying(false));
     }
   }, [current?.src, isLoop, isPlaying]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       if (e.code === "Space") {
@@ -169,20 +161,18 @@ export default function RelaxPlayer({ playlist = [] }) {
   };
 
   if (!list.length) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-        ไม่มีเพลงในเพลย์ลิสต์
-      </div>
-    );
+    // ❌ ไม่มีกรอบ/พื้นหลัง/เงา
+    return <div className={`p-0 text-sm text-slate-600 ${className}`}>ไม่มีเพลงในเพลย์ลิสต์</div>;
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+    // ❌ ไม่มี rounded/border/bg/shadow แล้ว
+    <div className={`w-full ${className}`}>
       <div className="flex items-center gap-4">
         <img
           src={current.cover || "/relax/covers/default.jpg"}
           alt={current.title}
-          className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover border border-slate-200"
+          className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover" // เอา border ออก
         />
         <div className="min-w-0">
           <div className="truncate font-medium text-black">{current.title}</div>
@@ -199,7 +189,7 @@ export default function RelaxPlayer({ playlist = [] }) {
           step={0.1}
           value={currentTime}
           onChange={handleSeek}
-          className="w-full accent-slate-900"
+          className="w-full"
         />
         <div className="mt-1 flex justify-between text-xs text-slate-500">
           <span>{formatTime(currentTime)}</span>
@@ -238,7 +228,7 @@ export default function RelaxPlayer({ playlist = [] }) {
           </button>
           <button
             onClick={togglePlay}
-            className="rounded-xl bg-slate-900 text-white px-4 py-1.5 text-sm hover:opacity-90 "
+            className="rounded-xl bg-slate-900 text-white px-4 py-1.5 text-sm hover:opacity-90"
             title={isPlaying ? "หยุดชั่วคราว" : "เล่น"}
           >
             {isPlaying ? "Pause" : "Play"}
@@ -252,7 +242,7 @@ export default function RelaxPlayer({ playlist = [] }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
           <span className="text-xs text-slate-500">เสียง</span>
           <input
             type="range"
@@ -261,15 +251,15 @@ export default function RelaxPlayer({ playlist = [] }) {
             step={0.01}
             value={volume}
             onChange={handleVolume}
-            className="w-28 accent-slate-900"
+            className="w-full sm:w-28"
           />
         </div>
+      
       </div>
 
       <audio ref={audioRef} preload="metadata">
         <source src={current.src} type="audio/mp4" />
       </audio>
-
     </div>
   );
 }
