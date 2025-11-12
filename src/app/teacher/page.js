@@ -189,7 +189,7 @@ export default function TeacherDashboard() {
           <div className="text-xs text-slate-500">{fmtTime(r.reported_at)}</div>
         </div>
 
-        <div className="text-sm text-slate-700 whitespace-pre-wrap break-words">
+        <div className="text-sm text-slate-700 whitespace-pre-wrap wrap-anywhere">
           {r.description}
         </div>
 
@@ -204,7 +204,7 @@ export default function TeacherDashboard() {
           </div>
           <div className="rounded-lg bg-slate-50 p-2 col-span-2">
             <div className="text-slate-500">สถานที่</div>
-            <div className="font-medium break-words">{r.problem_where || '-'}</div>
+            <div className="font-medium wrap-anywhere">{r.problem_where || '-'}</div>
           </div>
         </div>
 
@@ -336,12 +336,12 @@ export default function TeacherDashboard() {
                       reports.map((r) => (
                         <tr key={r.report_id} className="border-t border-slate-100 align-top">
                           <td className="py-3 pr-2 sm:pr-4 font-medium whitespace-nowrap">#{r.report_id}</td>
-                          <td className="py-3 pr-2 sm:pr-4 break-words">
+                          <td className="py-3 pr-2 sm:pr-4 wrap-anywhere">
                             <div className="line-clamp-2">{r.description}</div>
                           </td>
                           <td className="py-3 pr-2 sm:pr-4">{r.problem_type}</td>
                           <td className="py-3 pr-2 sm:pr-4">{r.problem_severe}</td>
-                          <td className="py-3 pr-2 sm:pr-4 break-words">{r.problem_where}</td>
+                          <td className="py-3 pr-2 sm:pr-4 wrap-anywhere">{r.problem_where}</td>
                           <td className="py-3 pr-2 sm:pr-4 whitespace-nowrap">{fmtTime(r.reported_at)}</td>
                           <td className="py-3 pr-2 sm:pr-4 whitespace-nowrap">
                             {/* <select

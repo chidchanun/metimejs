@@ -160,7 +160,6 @@ export async function POST(request) {
       token,
     } = body;
     console.log(image_url)
-    // ตรวจสอบ token
     if (!token) {
       return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 400 });
     }

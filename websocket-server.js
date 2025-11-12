@@ -31,7 +31,7 @@ wss.on("connection", (ws) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer bb_wxLFgw8CR-iLciSZfIsu4wVNqKtJ9gRPLQsPEM4oPVs`,
+            Authorization: `Bearer ${API_TOKEN}`,
           },
           body: JSON.stringify(bodyData)
         });
