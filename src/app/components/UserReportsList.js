@@ -33,6 +33,8 @@ export default function UserReportsList() {
   const [reports, setReports] = useState([]);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
 
   // ✅ เพิ่ม Pagination state
   const [page, setPage] = useState(1);
@@ -62,6 +64,7 @@ export default function UserReportsList() {
         }
 
         const data = await res.json();
+        console.log(data)
         setReports(data.result || []);
       } catch (err) {
         setError(err.message || "เกิดข้อผิดพลาด");
@@ -94,7 +97,7 @@ export default function UserReportsList() {
                     #{r.report_id} • {r.problem_type || "ไม่ระบุประเภท"}
                   </div>
                   <div className="text-xs text-slate-500">
-                    ความรุนแรง: {r.problem_severe || "-"} •{" "}
+                    ความรุนแรง: {r.problem_severe || "-"} • สถานะ: {r.status_name || "ไม่พบสถานะ"} •{" "}
                     {r.reported_at ? new Date(r.reported_at).toLocaleString("th-TH") : "-"}
                   </div>
                 </div>
@@ -137,6 +140,20 @@ export default function UserReportsList() {
       )}
 
       {/* โมดัล */}
+      {/* <Modal open={!!selected} onClose={() => setSelected(null)} title="รายละเอียดรายงาน">
+        {selected && (
+          <div className="space-y-2 text-sm">
+            <p><b>ประเภท:</b> {selected.problem_type}</p>
+            <p><b>ความรุนแรง:</b> {selected.problem_severe}</p>
+            <p><b>สถานที่:</b> {selected.problem_where}</p>
+            <p><b>คำอธิบาย:</b> {selected.description}</p>
+
+            
+          </div>
+        )}
+      </Modal> */}
+
+      {/* โมดัล */}
       <Modal open={!!selected} onClose={() => setSelected(null)} title="รายละเอียดรายงาน">
         {selected && (
           <div className="space-y-2 text-sm">
@@ -144,9 +161,40 @@ export default function UserReportsList() {
             <p><b>ความรุนแรง:</b> {selected.problem_severe}</p>
             <p><b>สถานที่:</b> {selected.problem_where}</p>
             <p><b>คำอธิบาย:</b> {selected.description}</p>
+            <p><b>สถานะ:</b> {selected.status_name || "ไม่พบสถานะ"}</p>
+
+            {selected.image_url && (
+              <div className="pt-2">
+                <p className="font-medium mb-1">รูปภาพประกอบ</p>
+
+                <div className="flex justify-center">
+                  <img
+                    src={selected.image_url}
+                    alt="รูปภาพประกอบรายงาน"
+                    className="rounded-lg max-h-64 object-contain border border-slate-200 cursor-pointer"
+                    onClick={() => setPreviewImage(selected.image_url)}  // 👈 คลิกเพื่อขยาย
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
+
+      <Modal
+        open={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        title="รูปภาพประกอบ"
+      >
+        <div className="flex justify-center">
+          <img
+            src={previewImage}
+            alt="ขยายรูปภาพ"
+            className="max-h-[80vh] rounded-lg object-contain"
+          />
+        </div>
+      </Modal>
+
     </div>
   );
 }
