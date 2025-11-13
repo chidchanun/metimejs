@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import RelaxPlayer from "../components/RelaxPlayer";
 import IssueReportForm from "../components/IssueReportForm";
 import MoodPickerCard from "../components/MoodPickerCard";
@@ -155,6 +156,7 @@ export default function StudentHome() {
   const [range, setRange] = useState(7);
   const [openChatAI, setOpenChatAI] = useState(false);
   const [openChatDev, setOpenChatDev] = useState(false);
+  const router = useRouter()
 
 
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -172,7 +174,7 @@ export default function StudentHome() {
       try {
         const res = await fetch(`/api/v1/user-emotion?days=${range}`, { cache: "no-store" });
         const { data } = await res.json();
-        console.log('rows', data.length, data);
+        // console.log('rows', data.length, data);
 
         setMoods(
           data.map((row) => ({
