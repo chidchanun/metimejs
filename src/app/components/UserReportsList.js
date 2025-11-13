@@ -161,7 +161,7 @@ export default function UserReportsList() {
             <p><b>ความรุนแรง:</b> {selected.problem_severe}</p>
             <p><b>สถานที่:</b> {selected.problem_where}</p>
             <p><b>คำอธิบาย:</b> {selected.description}</p>
-            <p><b>สถานะ:</b> {selected.status_name || "ไม่พบสถานะ"}</p>
+            <p><b>สถานะ:</b> {selected.status || "ไม่พบสถานะ"}</p>
 
             {selected.image_url && (
               <div className="pt-2">
