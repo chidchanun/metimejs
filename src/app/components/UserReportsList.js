@@ -33,6 +33,8 @@ export default function UserReportsList() {
   const [reports, setReports] = useState([]);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
 
   // ✅ เพิ่ม Pagination state
   const [page, setPage] = useState(1);
@@ -137,6 +139,20 @@ export default function UserReportsList() {
       )}
 
       {/* โมดัล */}
+      {/* <Modal open={!!selected} onClose={() => setSelected(null)} title="รายละเอียดรายงาน">
+        {selected && (
+          <div className="space-y-2 text-sm">
+            <p><b>ประเภท:</b> {selected.problem_type}</p>
+            <p><b>ความรุนแรง:</b> {selected.problem_severe}</p>
+            <p><b>สถานที่:</b> {selected.problem_where}</p>
+            <p><b>คำอธิบาย:</b> {selected.description}</p>
+
+            
+          </div>
+        )}
+      </Modal> */}
+
+      {/* โมดัล */}
       <Modal open={!!selected} onClose={() => setSelected(null)} title="รายละเอียดรายงาน">
         {selected && (
           <div className="space-y-2 text-sm">
@@ -144,9 +160,41 @@ export default function UserReportsList() {
             <p><b>ความรุนแรง:</b> {selected.problem_severe}</p>
             <p><b>สถานที่:</b> {selected.problem_where}</p>
             <p><b>คำอธิบาย:</b> {selected.description}</p>
+
+            {selected.image_url && (
+              <div className="pt-2">
+                <p className="font-medium mb-1">รูปภาพประกอบ</p>
+
+                <div className="flex justify-center">
+                  <img
+                    src={selected.image_url}
+                    alt="รูปภาพประกอบรายงาน"
+                    className="rounded-lg max-h-64 object-contain border border-slate-200 cursor-pointer"
+                    onClick={() => setPreviewImage(selected.image_url)}  // 👈 คลิกเพื่อขยาย
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
+
+      <Modal
+        open={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        title="รูปภาพประกอบ"
+      >
+        <div className="flex justify-center">
+          <img
+            src={previewImage}
+            alt="ขยายรูปภาพ"
+            className="max-h-[80vh] rounded-lg object-contain"
+          />
+        </div>
+      </Modal>
+
+
+
     </div>
   );
 }
