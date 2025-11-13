@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const MOODS = [
   { id: 1, emoji: "😊", text: "วันนี้ดีดี๊" },
@@ -12,6 +13,7 @@ export default function MoodPickerCard({ onSubmit }) {
   const [selected, setSelected] = useState();
   const [emotion, setEmotion] = useState({});
   const [tokenValue, setTokenValue] = useState();
+  const router = useRouter();
 
   useEffect(() => {
     const tokenCookie = document.cookie
@@ -47,6 +49,8 @@ export default function MoodPickerCard({ onSubmit }) {
     if (typeof onSubmit === "function") {
       onSubmit(selected);
     }
+
+    router.refresh();
   }
 
   return (

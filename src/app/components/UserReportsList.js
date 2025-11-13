@@ -64,6 +64,7 @@ export default function UserReportsList() {
         }
 
         const data = await res.json();
+        console.log(data)
         setReports(data.result || []);
       } catch (err) {
         setError(err.message || "เกิดข้อผิดพลาด");
@@ -96,7 +97,7 @@ export default function UserReportsList() {
                     #{r.report_id} • {r.problem_type || "ไม่ระบุประเภท"}
                   </div>
                   <div className="text-xs text-slate-500">
-                    ความรุนแรง: {r.problem_severe || "-"} •{" "}
+                    ความรุนแรง: {r.problem_severe || "-"} • สถานะ: {r.status_name || "ไม่พบสถานะ"} •{" "}
                     {r.reported_at ? new Date(r.reported_at).toLocaleString("th-TH") : "-"}
                   </div>
                 </div>
@@ -160,6 +161,7 @@ export default function UserReportsList() {
             <p><b>ความรุนแรง:</b> {selected.problem_severe}</p>
             <p><b>สถานที่:</b> {selected.problem_where}</p>
             <p><b>คำอธิบาย:</b> {selected.description}</p>
+            <p><b>สถานะ:</b> {selected.status_name || "ไม่พบสถานะ"}</p>
 
             {selected.image_url && (
               <div className="pt-2">
@@ -192,8 +194,6 @@ export default function UserReportsList() {
           />
         </div>
       </Modal>
-
-
 
     </div>
   );
