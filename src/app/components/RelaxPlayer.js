@@ -101,10 +101,11 @@ export default function RelaxPlayer({ playlist = [], className = "" }) {
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === "ArrowLeft") {
+      // if (e.code === "Space") {
+      //   e.preventDefault();
+      //   togglePlay();
+      // } else 
+      if (e.key === "ArrowLeft") {
         const audio = audioRef.current;
         if (audio) audio.currentTime = Math.max(0, audio.currentTime - 5);
       } else if (e.key === "ArrowRight") {
@@ -254,7 +255,7 @@ export default function RelaxPlayer({ playlist = [], className = "" }) {
             className="w-full sm:w-28"
           />
         </div>
-      
+
       </div>
 
       <audio ref={audioRef} preload="metadata">

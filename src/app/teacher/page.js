@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import LogoutButton from "../components/LogoutButton";
 import AlertCard from "../components/AlertCard";
+import { FaBell } from "react-icons/fa";
 
 function Tile({ title, value }) {
   return (
@@ -32,10 +33,16 @@ export default function TeacherDashboard() {
   const [alertDetail, setAlertDetail] = useState("");
   const [alertShow, setAlertShow] = useState(false);
 
+  // Notice state
+  const [notices, setNotices] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   // Status-related state
-  const [statuses, setStatuses] = useState([]);                 // all statuses
-  const [statusByReportId, setStatusByReportId] = useState({}); // map: report_id -> status_id
-  const [savingStatus, setSavingStatus] = useState({});         // map: report_id -> boolean
+  const [statuses, setStatuses] = useState([]);
+  const [statusByReportId, setStatusByReportId] = useState({});
+  const [savingStatus, setSavingStatus] = useState({});
+
+  const ws = useRef(null);
 
   // =========================
   // Helpers
@@ -80,8 +87,31 @@ export default function TeacherDashboard() {
     }
   }
 
+  useEffect(() => {
+    let alive = true;
+
+    async function loadNotices() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/notice`, { cache: "no-store" });
+        if (!res.ok) throw new Error("โหลด notice ล้มเหลว");
+        const data = await res.json();
+        if (alive && data?.result) {
+          setNotices(data.result);
+          // นับจำนวน notice ที่ยัง unread
+          setUnreadCount(data.result.filter(n => n.status === 'unread').length);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadNotices();
+
+    return () => { alive = false; };
+  }, [API_BASE]);
+
   // =========================
-  // Data loading (single effect, mobile-friendly, no duplicate calls)
+  // Data loading
   // =========================
   useEffect(() => {
     let alive = true;
@@ -130,7 +160,29 @@ export default function TeacherDashboard() {
 
     loadAll();
     UserCheckRole(tokenValue);
-    return () => { alive = false; };
+
+    // =========================
+    // WebSocket connect
+    // =========================
+    ws.current = new WebSocket("ws://localhost:8080");
+    ws.current.onopen = () => {
+      console.log("Connected WS for notices");
+      // ส่ง init role=2
+      ws.current.send(JSON.stringify({ type: "init", role: 2 }));
+    };
+    ws.current.onmessage = (evt) => {
+      const data = JSON.parse(evt.data);
+      if (data.type === "notice") {
+        setNotices((prev) => [...prev, data]);
+        setUnreadCount((c) => c + 1);
+      }
+    };
+    ws.current.onclose = () => console.log("WS disconnected");
+
+    return () => {
+      alive = false;
+      ws.current?.close();
+    };
   }, [API_BASE]);
 
   async function handleChangeStatus(reportId, newStatusId) {
@@ -147,7 +199,6 @@ export default function TeacherDashboard() {
       const res = await fetch(`${API_BASE}/api/v1/report/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // credentials: "include",
         body: JSON.stringify({ report_id: rId, status_id: sId }),
       });
 
@@ -163,7 +214,7 @@ export default function TeacherDashboard() {
   }
 
   // =========================
-  // Counters (unchanged)
+  // Counters
   // =========================
   const counters = useMemo(() => {
     const total = reports.length;
@@ -178,9 +229,6 @@ export default function TeacherDashboard() {
     return { queue: total, inProgress: 0, closedToday: todayCount };
   }, [reports]);
 
-  // =========================
-  // Responsive item (mobile card)
-  // =========================
   function ReportCard({ r }) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3">
@@ -250,7 +298,16 @@ export default function TeacherDashboard() {
             <h1 className="text-xl sm:text-2xl font-semibold">แดชบอร์ดฝ่ายพัฒนา</h1>
             <p className="text-slate-500">คิวขอความช่วยเหลือและปัญหาที่ต้องติดตาม</p>
           </div>
-          <div className="self-start">
+          <div className="self-start flex flex-row items-center gap-4">
+            {/* Notice bell */}
+            <div className="relative cursor-pointer" onClick={() => setUnreadCount(0)}>
+              <FaBell className="w-8 h-8" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
             <LogoutButton className="bg-red-600 shrink-0" />
           </div>
         </div>
@@ -268,7 +325,13 @@ export default function TeacherDashboard() {
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 p-4 font-medium">แชทที่ขอความช่วยเหลือ</div>
             <ul className="divide-y divide-slate-100">
-              <li className="p-4 text-slate-500">(ยังไม่มี API แชท—จะแสดงเมื่อเชื่อมต่อ endpoint แชท)</li>
+              <li className="p-4 text-slate-500">
+                {(notices.length === 0) ? "(ยังไม่มี notice)" :
+                  notices.map((n, idx) => (
+                    <div key={idx} className="p-2 border-b border-slate-100">{n.message}</div>
+                  ))
+                }
+              </li>
             </ul>
           </div>
 
@@ -276,15 +339,11 @@ export default function TeacherDashboard() {
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 p-4 font-medium flex items-center justify-between">
               <span>ปัญหาที่รายงาน </span>
-              {/* small counter on mobile */}
               <span className="text-xs text-slate-500 sm:hidden">ทั้งหมด {reports.length} รายการ</span>
             </div>
 
             <div className="p-4">
-              {error ? (
-                <div className="text-red-600 text-sm">เกิดข้อผิดพลาด: {error}</div>
-              ) : null}
-              {/* Mobile: cards (<= sm) */}
+              {error && <div className="text-red-600 text-sm">เกิดข้อผิดพลาด: {error}</div>}
               <div className="sm:hidden w-full max-w-full overflow-x-hidden">
                 <div className="grid grid-cols-1 gap-4 px-3">
                   {loading ? (
@@ -296,7 +355,7 @@ export default function TeacherDashboard() {
                   )}
                 </div>
               </div>
-              {/* Desktop / Tablet: table */}
+
               <div className="hidden sm:block overflow-x-auto -mx-2 sm:mx-0">
                 <table className="min-w-full table-auto text-sm">
                   <colgroup>
@@ -336,35 +395,21 @@ export default function TeacherDashboard() {
                       reports.map((r) => (
                         <tr key={r.report_id} className="border-t border-slate-100 align-top">
                           <td className="py-3 pr-2 sm:pr-4 font-medium whitespace-nowrap">#{r.report_id}</td>
-                          <td className="py-3 pr-2 sm:pr-4 wrap-anywhere">
-                            <div className="line-clamp-2">{r.description}</div>
-                          </td>
+                          <td className="py-3 pr-2 sm:pr-4 wrap-anywhere">{r.description}</td>
                           <td className="py-3 pr-2 sm:pr-4">{r.problem_type}</td>
                           <td className="py-3 pr-2 sm:pr-4">{r.problem_severe}</td>
                           <td className="py-3 pr-2 sm:pr-4 wrap-anywhere">{r.problem_where}</td>
                           <td className="py-3 pr-2 sm:pr-4 whitespace-nowrap">{fmtTime(r.reported_at)}</td>
                           <td className="py-3 pr-2 sm:pr-4 whitespace-nowrap">
-                            {/* <select
-                              className="rounded-md border border-slate-300 bg-white p-1.5 text-sm"
-                              value={statusByReportId[r.report_id] ?? ""}
-                              onChange={(e) => handleChangeStatus(r.report_id, e.target.value)}
-                              disabled={!!savingStatus[r.report_id]}
-                            >
-                              <option value="" disabled>เลือกสถานะ</option>
-                              {statuses.map((s) => (
-                                <option key={s.status_id} value={s.status_id}>{s.status_name}</option>
-                              ))}
-                            </select> */}
                             <select
                               value={statusByReportId[r.report_id] ?? ""}
                               onChange={(e) => handleChangeStatus(r.report_id, e.target.value)}
                               className={`
                                 rounded-md border border-slate-300 p-1.5 text-sm font-medium
                                 transition-colors duration-200
-                                ${
-                                  statusByReportId[r.report_id] === "2"
-                                    ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                                    : statusByReportId[r.report_id] === "3"
+                                ${statusByReportId[r.report_id] === "2"
+                                  ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                                  : statusByReportId[r.report_id] === "3"
                                     ? "bg-green-100 text-green-800 border-green-300"
                                     : "bg-white text-slate-700"
                                 }
@@ -388,9 +433,7 @@ export default function TeacherDashboard() {
                               >
                                 เปิดรูป
                               </a>
-                            ) : (
-                              "-"
-                            )}
+                            ) : "-"}
                           </td>
                         </tr>
                       ))
