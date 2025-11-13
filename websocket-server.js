@@ -8,7 +8,7 @@ const wss = new WebSocketServer({ port: 8080 });
 
 const API_TOKEN = process.env.API_TOKEN;
 const API_URL = "https://sharingbox.online/bigbot/intra/api/v1/aichat/etechMental";
-const NOTICE_API_URL = "https://localhost:3000/api/v1/notice"; 
+const NOTICE_API_URL = "https://localhost:3000/api/v1/notice";
 
 const clients = new Map();
 const NOTICE_DEBOUNCE_MS = 3000; // 3 วินาที
@@ -25,12 +25,12 @@ wss.on("connection", (ws) => {
             // ======================
             if (data.type === "init") {
                 const role = Number(data.role);
+                const token = String(data.token)
                 if (![1, 2].includes(role)) {
                     ws.send(JSON.stringify({ type: "error", message: "Role ไม่ถูกต้อง" }));
                     return;
                 }
-                clients.set(ws, { role, lastNotice: 0 });
-                console.log("Client role set:", role);
+                clients.set(ws, { role, token, lastNotice: 0 });
                 return;
             }
 
@@ -78,25 +78,27 @@ wss.on("connection", (ws) => {
             // Notice -> อาจารย์ role = 2
             // ======================
             if (data.type === "notice") {
+
                 const now = Date.now();
                 if (now - clientInfo.lastNotice < NOTICE_DEBOUNCE_MS) {
                     ws.send(JSON.stringify({ type: "error", message: "โปรดรอซักครู่ก่อนส่ง notice ใหม่" }));
                     return;
                 }
-
                 const noticeText = data.message;
-
                 // ส่ง POST request ไป API แทนบันทึก DB
                 const apiRes = await fetch("http://localhost:3000/api/v1/notice", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: noticeText }),
+                    body: JSON.stringify({ message: noticeText, token: clientInfo.token }),
                 });
 
+                const apiMessage = await apiRes.json()
+
                 if (!apiRes.ok) {
-                    ws.send(JSON.stringify({ type: "error", message: "ไม่สามารถบันทึก notice ผ่าน API ได้" }));
+                    ws.send(JSON.stringify({ type: "error", message: apiMessage.message || "ไม่สามารถบันทึก notice ผ่าน API ได้" }));
                     return;
                 }
+
 
                 const apiData = await apiRes.json();
                 const noticeId = apiData.notice_id; // สมมติ API คืนค่า notice_id

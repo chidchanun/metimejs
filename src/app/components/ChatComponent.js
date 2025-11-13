@@ -11,17 +11,33 @@ export default function ChatComponent() {
   const chatRef = useRef(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const WS_URL = "ws://localhost:8080";
-  const RECONNECT_INTERVAL = 3000;
+  const WS_URL = "ws://localhost:8080"; // เปลี่ยน URL ตาม server ของคุณ
+  const RECONNECT_INTERVAL = 3000; // 3 วินาที
 
   const connectWS = () => {
+    const tokenCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth_token="));
+
+    if (!tokenCookie) {
+      router.push("/login");
+      return;
+    }
+
+    const token = decodeURIComponent(tokenCookie.split("=")[1]);
     ws.current = new WebSocket(WS_URL);
 
     ws.current.onopen = () => {
       console.log("✅ Connected to WS server");
 
-      // **สำคัญ**: ส่ง init พร้อม role นักเรียน
-      ws.current.send(JSON.stringify({ type: "init", role: 1 }));
+      // ✅ ส่ง init เพื่อระบุ role ของ client
+      ws.current.send(
+        JSON.stringify({
+          type: "init",
+          role: 1, // 1 = student
+          token: token
+        })
+      );
     };
 
     ws.current.onclose = () => {
@@ -32,13 +48,22 @@ export default function ChatComponent() {
     ws.current.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+
         if (data.type === "chat" || data.type === "notice") {
           setMessages((prev) => [
             ...prev,
-            { message: data.message, role: data.role || (data.type === "notice" ? "teacher" : "ai") }
+            {
+              message: data.message,
+              role: data.role || (data.type === "notice" ? "teacher" : "ai"),
+            },
           ]);
         } else if (data.type === "error") {
-          setMessages((prev) => [...prev, { message: data.message, role: "system" }]);
+          setMessages((prev) => [
+            ...prev,
+            { message: data.message, role: "system" },
+          ]);
+        } else if (data.type === "init_ok") {
+          console.log("✅ Init completed");
         }
       } catch (err) {
         console.error("Invalid WS message:", err);
