@@ -97,7 +97,7 @@ export default function UserReportsList() {
                     #{r.report_id} • {r.problem_type || "ไม่ระบุประเภท"}
                   </div>
                   <div className="text-xs text-slate-500">
-                    ความรุนแรง: {r.problem_severe || "-"} • สถานะ: {r.status_name || "ไม่พบสถานะ"} •{" "}
+                    ความรุนแรง: {r.problem_severe || "-"} • สถานะ: {r.status || "ไม่พบสถานะ"} •{" "}
                     {r.reported_at ? new Date(r.reported_at).toLocaleString("th-TH") : "-"}
                   </div>
                 </div>

@@ -33,15 +33,18 @@ export async function GET(request) {
         r.image_url,
         r.reported_at,
         pt.problemType_name AS problem_type,
-        ps.problemSevere_name AS problem_severe
+        ps.problemSevere_name AS problem_severe,
+        s.status_name AS status
       FROM user_report ur
-      JOIN report r         ON ur.report_id = r.report_id
+      JOIN report r ON ur.report_id = r.report_id
       LEFT JOIN problem_type pt ON r.problem_type = pt.problemType_id
       LEFT JOIN problem_severe ps ON r.problem_severe = ps.problemSevere_id
+      LEFT JOIN report_status rs ON rs.report_id = r.report_id
+      LEFT JOIN status s ON rs.status_id = s.status_id
       WHERE ur.user_id = ?
       ORDER BY r.report_id DESC
     `, [tokenRow.user_id]);
-
+      console.log(result)
     return NextResponse.json({ message: "ok", result }, { status: 200 });
   } catch (e) {
     console.error("[/user-report GET] Error:", e);
