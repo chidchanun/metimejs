@@ -2,11 +2,13 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import RelaxPlayer from "../components/RelaxPlayer";
 import IssueReportForm from "../components/IssueReportForm";
 import MoodPickerCard from "../components/MoodPickerCard";
 import LogoutButton from "../components/LogoutButton";
 import UserReportsList from "../components/UserReportsList";
+import ChatComponent from "../components/ChatComponent";
 
 /**
  * Utilities
@@ -152,6 +154,13 @@ export default function StudentHome() {
   const [hasMoodToday, setHasMoodToday] = useState(false);
   const [openMood, setOpenMood] = useState(false);
   const [range, setRange] = useState(7);
+  const [openChatAI, setOpenChatAI] = useState(false);
+  const [openChatDev, setOpenChatDev] = useState(false);
+  const router = useRouter()
+  const [user, setUser] = useState(null);
+  const [reports, setReports] = useState([]);
+
+
 
 
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -169,7 +178,7 @@ export default function StudentHome() {
       try {
         const res = await fetch(`/api/v1/user-emotion?days=${range}`, { cache: "no-store" });
         const { data } = await res.json();
-        console.log('rows', data.length, data);
+        // console.log('rows', data.length, data);
 
         setMoods(
           data.map((row) => ({
@@ -268,13 +277,53 @@ export default function StudentHome() {
     loadIssues();
   }, []);
 
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const tokenCookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("auth_token="));
+
+        if (!tokenCookie) return;
+
+        const token = decodeURIComponent(tokenCookie.split("=")[1]);
+
+        const res = await fetch("/api/v1/user/id", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+
+        const data = await res.json();
+        if (data.UserLocalDB) setUser(data.UserLocalDB);
+      } catch (err) {
+        console.error("โหลดข้อมูลผู้ใช้ล้มเหลว", err);
+      }
+    }
+
+    loadUser();
+  }, []);
+
+  useEffect(() => {
+    async function loadReports() {
+      const res = await fetch("/api/v1/report-status");
+      const { result } = await res.json();
+      setReports(result);
+    }
+
+    loadReports();
+  }, []);
+
+
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 sm:gap-2">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-black">สวัสดี 👋</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-black">
+              สวัสดี {user ? `${user.fname} ${user.lname}` : ""}
+            </h1>
             <p className="text-slate-500 text-sm sm:text-base">
               ดูภาพรวมช่วงนี้และเริ่มใช้งานอย่างรวดเร็ว
             </p>
@@ -298,8 +347,16 @@ export default function StudentHome() {
             รายงานปัญหา
           </QuickButton>
 
-          <QuickButton href="/chat" className="bg-slate-900">
+          <QuickButton onClick={() => setOpenChatAI(true)} className="bg-slate-900">
             ห้องแชท AI BigBot
+          </QuickButton>
+
+          {/* <QuickButton href="/chat" className="bg-slate-900">
+            ห้องแชท AI BigBot
+          </QuickButton> */}
+
+          <QuickButton href="/chat" className="bg-slate-900">
+            ห้องแชท ฝ่ายพัฒนา
           </QuickButton>
         </div>
 
@@ -332,7 +389,7 @@ export default function StudentHome() {
                 )}
               >
                 {moods.map((m, i) => (
-                  <div key={i} className={cx("text-center", isMobile && "min-w-[44px]")}>
+                  <div key={i} className={cx("text-center", isMobile && "min-w-:44px")}>
                     <div className={cx("h-10 w-full rounded-xl", moodColor(m.mood))} />
                     <div className="mt-1 text-[10px] sm:text-xs text-slate-500">{m.d}</div>
                   </div>
@@ -396,6 +453,13 @@ export default function StudentHome() {
             setOpenMood(false);
           }}
         />
+      </Modal>
+
+      {/* Modal: ห้องแชท AI BigBot */}
+      <Modal open={openChatAI} onClose={() => setOpenChatAI(false)} title="ห้องแชท AI BigBot">
+        <div className="h-[70vh]">
+          <ChatComponent />
+        </div>
       </Modal>
     </main>
   );

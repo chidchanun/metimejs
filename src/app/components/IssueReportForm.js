@@ -24,7 +24,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
   const [happenedAt, setHappenedAt] = useState(""); // yyyy-mm-dd จาก input[type=date]
   const [showTime, setShowTime] = useState(false); // NEW: เปิด/ปิดช่องเวลา
   const [happenedTime, setHappenedTime] = useState(""); // NEW: HH:mm จาก input[type=time]
-
+  const [file, setFile] = useState(null); // ✅ เก็บไฟล์จริง
   // สถานะทั่วไป
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -85,36 +85,33 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
 
     const token = await getToken();
 
-    // หากผู้ใช้ระบุวันที่ ใช้วันนั้น + เวลา (ถ้าเลือก) ไม่งั้นใช้ 00:00 ของวันนั้น
-    // ถ้าไม่ระบุวันเลย ใช้เวลาปัจจุบัน
     let reportedAt;
     if (happenedAt) {
-      const timePart = showTime && happenedTime ? happenedTime : "00:00"; // NEW
-      // ประกอบเป็น local datetime ก่อนคอนเวิร์ตเป็น ISO (UTC)
-      const dt = new Date(`${happenedAt}T${timePart}:00`); // NEW
+      const timePart = showTime && happenedTime ? happenedTime : "00:00";
+      const dt = new Date(`${happenedAt}T${timePart}:00`);
       reportedAt = dt.toISOString();
     } else {
       reportedAt = new Date().toISOString();
     }
 
-    const payload = {
-      description,
-      problem_where: problemWhere || null,
-      problem_type: Number(problemType),
-      problem_severe: Number(problemSevere),
-      image_url: imageUrl || null,
-      reported_at: reportedAt,
-      token,
-    };
+    // สร้าง FormData
+    const formData = new FormData();
+    formData.append("description", description);
+    formData.append("problem_where", problemWhere || "");
+    formData.append("problem_type", problemType);
+    formData.append("problem_severe", problemSevere);
+    formData.append("reported_at", reportedAt);
+    formData.append("token", token);
 
-    console.log("PAYLOAD ที่ส่ง:", payload);
+    if (file) {
+      formData.append("image", file); // ส่งไฟล์จริง
+    }
 
     setLoading(true);
     try {
       const res = await fetch(endpoint || "/api/v1/report", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData, // ✅ FormData
       });
 
       const data = await res.json();
@@ -125,16 +122,14 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       }
 
       setOk("ส่งรายงานสำเร็จ");
-      // ล้างฟอร์ม
       setDescription("");
       setProblemWhere("");
       setProblemType("");
       setProblemSevere("");
-      setImageUrl("");
+      setFile(null);
       setHappenedAt("");
-      setShowTime(false); // NEW
-      setHappenedTime(""); // NEW
-
+      setShowTime(false);
+      setHappenedTime("");
       onSubmitted?.();
     } catch (e) {
       console.error(e);
@@ -143,6 +138,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       setLoading(false);
     }
   }
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -284,20 +280,23 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       </div>
 
       {/* 6) ลิงก์รูปภาพ */}
+      {/* ✅ ช่องอัปโหลดรูปภาพ */}
       <div className="space-y-1">
         <label className="block text-sm font-medium text-slate-700">
-          ถ้าคุณมีรูปภาพ/วิดีโอหลักฐานโปรดแนบลิงก์ (ถ้ามี)
+          อัปโหลดรูปภาพหลักฐาน (ถ้ามี)
         </label>
         <input
-          type="url"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-300"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://..."
+          type="file"
+          accept="image/*"
+          onChange={(e) => setFile(e.target.files[0])}
+          className="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-slate-300"
         />
-        <p className="text-xs text-slate-400">อนุญาตเฉพาะ JPG, JPEG, PNG • ไม่เกิน 2MB ต่อไฟล์ (หากอัปโหลดจริงควรทำฝั่ง backend)</p>
+        {file && (
+          <p className="text-xs text-slate-500">
+            ไฟล์ที่เลือก: <span className="font-medium">{file.name}</span>
+          </p>
+        )}
       </div>
-
       {/* 7) ปุ่มส่ง */}
       <div className="pt-2">
         <button

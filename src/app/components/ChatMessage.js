@@ -1,11 +1,19 @@
 import { IoPersonCircleSharp } from "react-icons/io5";
 
 export default function ChatMessage({ message, role }) {
+<<<<<<< HEAD
   const isStudent = role === "student"; 
 
   return (
     <div
       className={`flex w-full my-2 ${
+=======
+  const isStudent = role === "student"; // ถ้าเป็นนักเรียน → ซ้าย / ถ้าเป็น ai → ขวา
+
+  return (
+    <div
+      className={`flex w-full my-2 text-black ${
+>>>>>>> 95ef372b64df70847778d06e7b034ba32679a282
         isStudent ? "justify-start" : "justify-end"
       }`}
     >
