@@ -40,6 +40,12 @@ wss.on("connection", (ws) => {
                 return;
             }
 
+            if (data.type === "teacherChat") {
+                const userMessage = data.message;
+                
+                const res_teacher = await fetch("/api/v1/user_")
+            }
+
             // ======================
             // Chat AI
             // ======================
@@ -101,7 +107,7 @@ wss.on("connection", (ws) => {
 
 
                 const apiData = await apiRes.json();
-                const noticeId = apiData.notice_id; // สมมติ API คืนค่า notice_id
+                const noticeId = apiData.notice_id; 
 
                 clientInfo.lastNotice = now;
 
