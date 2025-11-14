@@ -232,7 +232,7 @@ export default function TeacherDashboard() {
     // =========================
     // WebSocket connect
     // =========================
-    ws.current = new WebSocket("ws://localhost:8080");
+    ws.current = new WebSocket("ws://localhost:8082");
     ws.current.onopen = () => {
       console.log("Connected WS for notices");
       // ส่ง init role=2

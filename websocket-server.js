@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const wss = new WebSocketServer({ port: 8080 });
+const wss = new WebSocketServer({ port: 8082 });
 
 const API_TOKEN = process.env.API_KEY;
 const API_URL = "https://sharingbox.online/bigbot/intra/api/v1/aichat/etechMental";
@@ -158,4 +158,4 @@ wss.on("connection", (ws) => {
     });
 });
 
-console.log("WebSocket Server running on ws://localhost:8080");
+console.log("WebSocket Server running on ws://localhost:8082");

@@ -11,7 +11,7 @@ export default function ChatComponent({ role_id, roomId }) {
   const chatRef = useRef(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [chatTeacher, setChatTeacher] = useState(false)
-  const WS_URL = "ws://localhost:8080"; // เปลี่ยน URL ตาม server ของคุณ
+  const WS_URL = "ws://localhost:8082"; // เปลี่ยน URL ตาม server ของคุณ
   const RECONNECT_INTERVAL = 3000; // 3 วินาที
 
   const connectWS = () => {

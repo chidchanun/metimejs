@@ -14,7 +14,7 @@ export default function Chat() {
     const [showScrollButton, setShowScrollButton] = useState(false);
 
     useEffect(() => {
-        ws.current = new WebSocket("ws://localhost:8080");
+        ws.current = new WebSocket("ws://localhost:8082");
 
         ws.current.onopen = () => console.log("Connected to WS server");
 
