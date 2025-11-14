@@ -6,7 +6,7 @@ dotenv.config();
 
 const wss = new WebSocketServer({ port: 8080 });
 
-const API_TOKEN = process.env.API_TOKEN;
+const API_TOKEN = process.env.API_KEY;
 const API_URL = "https://sharingbox.online/bigbot/intra/api/v1/aichat/etechMental";
 const NOTICE_API_URL = "https://localhost:3000/api/v1/notice";
 
