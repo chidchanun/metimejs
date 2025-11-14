@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { lazy, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Image from 'next/image';
@@ -88,6 +88,8 @@ export default function LoginPage() {
               width={200}
               height={200}
               alt="Logo"
+              loading="lazy"
+              fetchPriority="high"
             />
             <h1 className="text-2xl font-semibold tracking-tight">เข้าสู่ระบบ</h1>
             <p className="text-slate-500 text-sm">ใช้รหัสนักศึกษาและรหัสผ่านเดียวกับ e-student</p>
