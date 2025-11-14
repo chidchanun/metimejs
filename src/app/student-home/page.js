@@ -206,8 +206,6 @@ export default function StudentHome() {
     loadMood();
   }, []);
 
-
-
   const categories = [
     { id: 1, name: "ความเครียดจากการเรียน" },
     { id: 2, name: "ความกดดันส่วนตัว" },

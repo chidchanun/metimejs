@@ -6,7 +6,7 @@ dotenv.config();
 
 const wss = new WebSocketServer({ port: 8080 });
 
-const API_TOKEN = process.env.API_TOKEN;
+const API_TOKEN = process.env.API_KEY;
 const API_URL = "https://sharingbox.online/bigbot/intra/api/v1/aichat/etechMental";
 const NOTICE_API_URL = "https://localhost:3000/api/v1/notice";
 
@@ -38,6 +38,12 @@ wss.on("connection", (ws) => {
             if (!clientInfo) {
                 ws.send(JSON.stringify({ type: "error", message: "กรุณาส่ง init ก่อน" }));
                 return;
+            }
+
+            if (data.type === "teacherChat") {
+                const userMessage = data.message;
+                
+                const res_teacher = await fetch("/api/v1/user_")
             }
 
             // ======================
@@ -101,7 +107,7 @@ wss.on("connection", (ws) => {
 
 
                 const apiData = await apiRes.json();
-                const noticeId = apiData.notice_id; // สมมติ API คืนค่า notice_id
+                const noticeId = apiData.notice_id; 
 
                 clientInfo.lastNotice = now;
 

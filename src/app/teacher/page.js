@@ -178,7 +178,6 @@ export default function TeacherDashboard() {
       }
     };
     ws.current.onclose = () => console.log("WS disconnected");
-
     return () => {
       alive = false;
       ws.current?.close();
