@@ -8,7 +8,7 @@ const wss = new WebSocketServer({ port: 8080 });
 
 const API_TOKEN = process.env.API_KEY;
 const API_URL = "https://sharingbox.online/bigbot/intra/api/v1/aichat/etechMental";
-const NOTICE_API_URL = "https://localhost:3000/api/v1/notice";
+const NOTICE_API_URL = "http://localhost:3000/api/v1/notice";
 
 const clients = new Map();
 const NOTICE_DEBOUNCE_MS = 3000; // 3 วินาที
@@ -24,34 +24,55 @@ wss.on("connection", (ws) => {
             // Init client + role
             // ======================
             if (data.type === "init") {
+                console.log("Received init data:", data); // <-- log ทั้ง object
+
                 const role = Number(data.role);
-                const token = String(data.token)
+                const token = String(data.token);
+                const ChatTeacher = Boolean(data.ChatTeacher);
+                const roomId = Number(data.roomId);
+
                 if (![1, 2].includes(role)) {
                     ws.send(JSON.stringify({ type: "error", message: "Role ไม่ถูกต้อง" }));
                     return;
                 }
-                clients.set(ws, { role, token, lastNotice: 0 });
+
+                clients.set(ws, { role, token, ChatTeacher, roomId, lastNotice: 0 });
+
+                ws.send(JSON.stringify({ type: "init_ok" }));
                 return;
             }
 
             const clientInfo = clients.get(ws);
+
             if (!clientInfo) {
+                console.log("No clientInfo found for ws:", ws); // <-- log กรณีไม่ได้ส่ง init
                 ws.send(JSON.stringify({ type: "error", message: "กรุณาส่ง init ก่อน" }));
                 return;
             }
 
-            if (data.type === "teacherChat") {
-                const userMessage = data.message;
-                
-                const res_teacher = await fetch("/api/v1/user_")
-            }
-
             // ======================
-            // Chat AI
+            // Chat
             // ======================
             if (data.type === "chat") {
                 const userMessage = data.message;
 
+                if (clientInfo.ChatTeacher) {
+                    const roomId = clientInfo.roomId;
+                    for (const [client, info] of clients.entries()) {
+                        // ส่งเฉพาะคนที่อยู่ในห้องเดียวกัน และไม่ใช่คนส่ง
+                        if (info.roomId === roomId && client !== ws && client.readyState === ws.OPEN) {
+                            client.send(JSON.stringify({
+                                type: "chat",
+                                message: userMessage,
+                                role: client.role === 1 ? "student" : "teacher",
+                            }));
+                        }
+                    }
+                    // ไม่ต้องส่ง ws.send กลับไปยังตัวเอง
+                    return;
+                }
+
+                // Chat AI
                 const bodyData = {
                     messageInput: userMessage,
                     markdown: "1",
@@ -69,69 +90,65 @@ wss.on("connection", (ws) => {
                 });
 
                 const result = await res.json();
-                const aiReply = result
+                const aiReply = result || "AI ไม่สามารถตอบกลับได้";
 
-                ws.send(
-                    JSON.stringify({
-                        type: "chat",
-                        message: aiReply,
-                        role: "ai",
-                    })
-                );
+                ws.send(JSON.stringify({
+                    type: "chat",
+                    message: aiReply,
+                    role: "ai"
+                }));
+                return;
             }
 
             // ======================
             // Notice -> อาจารย์ role = 2
             // ======================
             if (data.type === "notice") {
-
                 const now = Date.now();
                 if (now - clientInfo.lastNotice < NOTICE_DEBOUNCE_MS) {
                     ws.send(JSON.stringify({ type: "error", message: "โปรดรอซักครู่ก่อนส่ง notice ใหม่" }));
                     return;
                 }
+
                 const noticeText = data.message;
-                // ส่ง POST request ไป API แทนบันทึก DB
-                const apiRes = await fetch("http://localhost:3000/api/v1/notice", {
+
+                const apiRes = await fetch(NOTICE_API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ message: noticeText, token: clientInfo.token }),
                 });
 
-                const apiMessage = await apiRes.json()
+                const apiData = await apiRes.json();
 
                 if (!apiRes.ok) {
-                    ws.send(JSON.stringify({ type: "error", message: apiMessage.message || "ไม่สามารถบันทึก notice ผ่าน API ได้" }));
+
+                    ws.send(JSON.stringify({
+                        type: "error_notice",
+                        message: apiData.message || "ไม่สามารถบันทึก notice ผ่าน API ได้"
+                    }));
+                    clients.delete(ws)
                     return;
                 }
 
-
-                const apiData = await apiRes.json();
-                const noticeId = apiData.notice_id; 
-
+                const noticeId = apiData.notice_id;
                 clientInfo.lastNotice = now;
 
-                // ส่งไปยังทุกอาจารย์ฝ่ายพัฒนา
+                // ส่งให้ทุกอาจารย์
                 for (const [client, info] of clients.entries()) {
                     if (info.role === 2 && client.readyState === ws.OPEN) {
-                        client.send(
-                            JSON.stringify({
-                                type: "notice",
-                                message: noticeText,
-                                notice_id: noticeId,
-                            })
-                        );
+                        client.send(JSON.stringify({
+                            type: "notice",
+                            message: noticeText,
+                            notice_id: noticeId,
+                        }));
                     }
                 }
+                return;
             }
+
         } catch (err) {
             console.error("Error:", err);
-            ws.send(
-                JSON.stringify({
-                    type: "error",
-                    message: "เกิดข้อผิดพลาดในการประมวลผล",
-                })
-            );
+            ws.send(JSON.stringify({ type: "error", message: "เกิดข้อผิดพลาดในการประมวลผล" }));
         }
     });
 

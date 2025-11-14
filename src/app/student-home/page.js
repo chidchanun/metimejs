@@ -456,7 +456,7 @@ export default function StudentHome() {
       {/* Modal: ห้องแชท AI BigBot */}
       <Modal open={openChatAI} onClose={() => setOpenChatAI(false)} title="ห้องแชท AI BigBot">
         <div className="h-[70vh]">
-          <ChatComponent />
+          <ChatComponent role_id={1}/>
         </div>
       </Modal>
     </main>

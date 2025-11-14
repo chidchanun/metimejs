@@ -4,13 +4,13 @@ import ChatMessage from "../components/ChatMessage";
 import { IoSend, IoArrowDownCircleOutline } from "react-icons/io5";
 import TextareaAutosize from "react-textarea-autosize";
 
-export default function ChatComponent() {
+export default function ChatComponent({ role_id, roomId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const ws = useRef(null);
   const chatRef = useRef(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-
+  const [chatTeacher, setChatTeacher] = useState(false)
   const WS_URL = "ws://localhost:8080"; // เปลี่ยน URL ตาม server ของคุณ
   const RECONNECT_INTERVAL = 3000; // 3 วินาที
 
@@ -25,19 +25,34 @@ export default function ChatComponent() {
     }
 
     const token = decodeURIComponent(tokenCookie.split("=")[1]);
+
+    // ถ้า ws ยังเปิดอยู่ ให้ return
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) return;
+
     ws.current = new WebSocket(WS_URL);
 
     ws.current.onopen = () => {
       console.log("✅ Connected to WS server");
-
-      // ✅ ส่ง init เพื่อระบุ role ของ client
-      ws.current.send(
-        JSON.stringify({
-          type: "init",
-          role: 1, // 1 = student
-          token: token
-        })
-      );
+      if (role_id === 1) {
+        ws.current.send(
+          JSON.stringify({
+            type: "init",
+            role: role_id,
+            token,
+            ChatTeacher: false,
+          })
+        );
+      } else if (role_id === 2) {
+        ws.current.send(
+          JSON.stringify({
+            type: "init",
+            role: role_id,
+            token,
+            ChatTeacher: true,
+            roomId: roomId
+          })
+        );
+      }
     };
 
     ws.current.onclose = () => {
@@ -45,9 +60,33 @@ export default function ChatComponent() {
       setTimeout(connectWS, RECONNECT_INTERVAL);
     };
 
-    ws.current.onmessage = (event) => {
+    ws.current.onmessage = async (event) => {
       try {
         const data = JSON.parse(event.data);
+
+        if (data.type === "error_notice") {
+          setMessages((prev) => [
+            ...prev,
+            { message: data.message, role: "system" },
+          ]);
+
+          const resRoom = await fetch("api/v1/room/id", {
+            method: "POST",
+            body: JSON.stringify({ token }),
+          });
+          const dataDB = await resRoom.json();
+          ws.current.send(
+            JSON.stringify({
+              type: "init",
+              role: role_id,
+              token,
+              ChatTeacher: true,
+              roomId: dataDB.row_room[0].room_id,
+            })
+          );
+
+          return;
+        }
 
         if (data.type === "chat" || data.type === "notice") {
           setMessages((prev) => [
@@ -75,6 +114,7 @@ export default function ChatComponent() {
     connectWS();
     return () => ws.current?.close();
   }, []);
+
 
   const handleSend = () => {
     const msg = input.trim();
@@ -128,9 +168,21 @@ export default function ChatComponent() {
 
         <button
           onClick={() => {
+            const tokenCookie = document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("auth_token="));
+
+            if (!tokenCookie) {
+              router.push("/login");
+              return;
+            }
+
+            const token = decodeURIComponent(tokenCookie.split("=")[1]);
             const noticeMessage = "นักเรียนต้องการติดต่อฝ่ายพัฒนา (แจ้งปัญหา)";
+            setChatTeacher(true)
             setMessages((prev) => [...prev, { message: noticeMessage, role: "student" }]);
             if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+              ws.current.send(JSON.stringify({ type: "init", role: role_id, token: token, ChatTeacher: true }))
               ws.current.send(JSON.stringify({ type: "notice", message: noticeMessage }));
             } else console.warn("⚠️ WS ยังไม่พร้อมส่ง notice");
           }}
