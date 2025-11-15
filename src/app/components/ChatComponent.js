@@ -4,7 +4,7 @@ import ChatMessage from "../components/ChatMessage";
 import { IoSend, IoArrowDownCircleOutline } from "react-icons/io5";
 import TextareaAutosize from "react-textarea-autosize";
 
-export default function ChatComponent({ role_id, roomId }) {
+export default function ChatComponent({ role_id, roomId, message }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const ws = useRef(null);
@@ -13,7 +13,24 @@ export default function ChatComponent({ role_id, roomId }) {
   const [chatTeacher, setChatTeacher] = useState(false)
   const WS_URL = "ws://localhost:8082"; // เปลี่ยน URL ตาม server ของคุณ
   const RECONNECT_INTERVAL = 3000; // 3 วินาที
+  useEffect(() => {
+    if (message && message.result) {
+      const chatMessages = message.result.map((m) => ({
+        message: m.message,
+        role: m.role_id === role_id ? "student" : "teacher",
+        history_id: m.history_id,
+        user_id: m.user_id,
+        created_at: m.created_at
+      }));
 
+      // ใช้ setTimeout 0ms เพื่อเลี่ยง warning React
+      const id = setTimeout(() => {
+        setMessages(chatMessages);
+      }, 0);
+
+      return () => clearTimeout(id);
+    }
+  }, [message, role_id]);
   const connectWS = () => {
     const tokenCookie = document.cookie
       .split("; ")
