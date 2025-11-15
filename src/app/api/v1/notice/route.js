@@ -12,7 +12,8 @@ export async function GET() {
 export async function POST(request) {
     try {
         const body = await request.json();
-        const { message } = body;
+        const { message, token } = body;
+
 
         if (!message || message.trim() === "") {
             return NextResponse.json(
@@ -21,10 +22,38 @@ export async function POST(request) {
             );
         }
 
-        // บันทึกลง DB
+        if (!token) {
+            return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
+        }
+
+        const [row_token] = await db.query(
+            "SELECT * FROM user_tokens WHERE token = ?", [token]
+        )
+
+        if (row_token.length == 0) {
+            return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
+        }
+
+        const UserTokenLocalDB = await row_token[0]
+
+        const [row_user] = await db.query(
+            "SELECT * FROM users WHERE id = ?", [UserTokenLocalDB.user_id]
+        )
+
+        const UserLocalDB = await row_user[0]
+
+        const [check_notice] = await db.query(
+            "SELECT * FROM notice WHERE user_id = ?", [UserLocalDB.id]
+        )
+
+        if (check_notice.length >= 1) {
+            return NextResponse.json({ message: "โปรดรอฝ่ายพัฒนาตอบกลับ" }, { status: 400 })
+        }
+
+
         const [result] = await db.query(
-            "INSERT INTO notice (message, created_at, read_by, status) VALUES (?, NOW(), JSON_ARRAY(), 'unread')",
-            [message]
+            "INSERT INTO notice (message, created_at, read_by, status, user_id) VALUES (?, NOW(), JSON_ARRAY(), 'unread', ?)",
+            [message, UserLocalDB.id]
         );
 
         return NextResponse.json({
@@ -38,5 +67,49 @@ export async function POST(request) {
             { error: "เกิดข้อผิดพลาดในการบันทึก notice" },
             { status: 500 }
         );
+    }
+}
+
+
+export async function PATCH(request) {
+    try {
+        const body = await request.json()
+        const { token, notice_id } = body
+        if (!token) {
+            return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
+        }
+
+        if (!notice_id) {
+            return NextResponse.json({ message: "ไม่พบการเเจ้งเตือน" }, { status: 400 })
+        }
+
+
+        const [row_token] = await db.query(
+            "SELECT * FROM user_tokens WHERE token = ?", [token]
+        )
+
+        if (row_token.length == 0) {
+            return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
+        }
+
+        const UserTokenLocalDB = await row_token[0]
+
+        const [row_user] = await db.query(
+            "SELECT * FROM users WHERE id = ?", [UserTokenLocalDB.user_id]
+        )
+
+        const UserLocalDB = await row_user[0]
+
+        if (UserLocalDB.role_id === 1) {
+            return NextResponse.json({message : "ไม่มีสิทธิ์ในการเข้าถึง"}, {status : 403})
+        }
+
+        await db.query(
+            "UPDATE notice SET status = ? WHERE notice_id = ?",["read", notice_id.notice_id]
+        )
+
+        return NextResponse.json({ message: "ok" }, { status: 200 })
+    } catch {
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
     }
 }

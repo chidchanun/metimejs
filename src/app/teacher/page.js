@@ -1,10 +1,79 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import LogoutButton from "../components/LogoutButton";
 import AlertCard from "../components/AlertCard";
 import { FaBell } from "react-icons/fa";
+import ChatComponent from "../components/ChatComponent";
+import { FaArchive } from "react-icons/fa";
+import { IoMailUnread } from "react-icons/io5";
+
+
+function Modal({ open, onClose, title, children }) {
+  const isOpen = !!open;
+  const dialogRef = useRef(null);
+  const lastFocusedEl = useRef(null);
+
+  const esc = useCallback(
+    (e) => {
+      if (e.key === "Escape") onClose?.();
+    },
+    [onClose]
+  );
+
+  // ล็อกสกอร์ลเมื่อโมดัลเปิด + ฟังปุ่ม ESC
+  useEffect(() => {
+    if (!isOpen) return;
+    if (typeof document !== "undefined") {
+      document.documentElement.style.overflow = "hidden";
+    }
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("keydown", esc);
+      if (typeof document !== "undefined") {
+        document.documentElement.style.overflow = "";
+      }
+    };
+  }, [isOpen, esc]);
+
+  // โฟกัสภายในโมดัล (focus trap อย่างง่าย)
+  useEffect(() => {
+    if (!isOpen) return;
+    lastFocusedEl.current = document.activeElement;
+    dialogRef.current?.focus();
+    return () => {
+      lastFocusedEl.current?.focus?.();
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
+        <div
+          ref={dialogRef}
+          tabIndex={-1}
+          className="w-full max-w-xl sm:max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 outline-none"
+        >
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-200">
+            <h3 className="font-semibold text-base sm:text-lg text-black">{title}</h3>
+            <button
+              onClick={onClose}
+              className="rounded-lg px-2 py-1 text-slate-600 hover:bg-slate-100"
+              aria-label="ปิด"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="p-4 sm:p-5">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Tile({ title, value }) {
   return (
@@ -23,7 +92,9 @@ function fmtTime(iso) {
 
 export default function TeacherDashboard() {
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3000";
-
+  const [openChatTeacher, setOpenChatTeacher] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState(null);
+  const [roomId, setRoomId] = useState()
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reports, setReports] = useState([]);
@@ -164,7 +235,7 @@ export default function TeacherDashboard() {
     // =========================
     // WebSocket connect
     // =========================
-    ws.current = new WebSocket("ws://localhost:8080");
+    ws.current = new WebSocket("ws://localhost:8082");
     ws.current.onopen = () => {
       console.log("Connected WS for notices");
       // ส่ง init role=2
@@ -178,7 +249,6 @@ export default function TeacherDashboard() {
       }
     };
     ws.current.onclose = () => console.log("WS disconnected");
-
     return () => {
       alive = false;
       ws.current?.close();
@@ -323,17 +393,82 @@ export default function TeacherDashboard() {
         <div className="mt-8 grid grid-cols-1 gap-6">
           {/* Helpdesk placeholder */}
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 p-4 font-medium">แชทที่ขอความช่วยเหลือ</div>
+            <div className="border-b border-slate-200 p-4 font-medium flex flex-row items-center justify-between">
+              แชทที่ขอความช่วยเหลือ
+              <div className="flex flex-row gap-4">
+                <IoMailUnread className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" />
+                <FaArchive className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" />
+              </div>
+            </div>
+
             <ul className="divide-y divide-slate-100">
               <li className="p-4 text-slate-500">
-                {(notices.length === 0) ? "(ยังไม่มี notice)" :
-                  notices.map((n, idx) => (
-                    <div key={idx} className="p-2 border-b border-slate-100">{n.message}</div>
-                  ))
-                }
+                {notices.map((n, idx) => (
+                  <div
+                    key={idx}
+                    onClick={async () => {
+                      setSelectedNotice(n);
+
+                      try {
+                        const tokenCookie = document.cookie
+                          .split("; ")
+                          .find(row => row.startsWith("auth_token="));
+                        const token = tokenCookie ? decodeURIComponent(tokenCookie.split("=")[1]) : null;
+                        if (!token) throw new Error("โปรดเข้าสู่ระบบใหม่");
+
+                        const updateNotice = await fetch("/api/v1/notice", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ token: token, notice_id: n })
+                        })
+
+                        if (!updateNotice.ok) {
+                          return;
+                        }
+
+                        const res = await fetch(`${API_BASE}/api/v1/room`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ token, student_id: n.user_id })
+                        });
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || "สร้างห้องไม่สำเร็จ");
+
+                        // บันทึก room_id ลงใน state เพื่อนำไป init WS
+                        setRoomId(data.room_id)
+                        setOpenChatTeacher(true);
+                      } catch (err) {
+                        alert(err.message);
+                      }
+                    }}
+                    className="p-2 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition"
+                  >
+                    {n.message}
+                  </div>
+                ))}
               </li>
             </ul>
           </div>
+
+          {/* =============================
+          Modal ห้องแชท ฝ่ายพัฒนา
+      ============================== */}
+          <Modal
+            open={openChatTeacher}
+            onClose={() => setOpenChatTeacher(false)}
+            title="ห้องแชท ฝ่ายพัฒนา"
+          >
+            <div className="h-[70vh]">
+              {/* ส่ง role_id = 2 เพื่อเป็นอาจารย์ */}
+              <ChatComponent
+                role_id={2}
+                student_id={selectedNotice?.student_id}
+                notice={selectedNotice}
+                roomId={roomId}
+              />
+            </div>
+          </Modal>
 
           {/* Issues */}
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">

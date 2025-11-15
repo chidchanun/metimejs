@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const error = searchParams?.get("error");
+
 
   const [studentCode, setStudentCode] = useState("");
   const [password, setPassword] = useState("");
@@ -88,16 +87,18 @@ export default function LoginPage() {
               width={200}
               height={200}
               alt="Logo"
+              loading="lazy"
+              fetchPriority="high"
             />
             <h1 className="text-2xl font-semibold tracking-tight">เข้าสู่ระบบ</h1>
             <p className="text-slate-500 text-sm">ใช้รหัสนักศึกษาและรหัสผ่านเดียวกับ e-student</p>
           </div>
 
-          {error && (
+          {/* {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
               ไม่สามารถเข้าสู่ระบบได้: {error}
             </div>
-          )}
+          )} */}
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div>

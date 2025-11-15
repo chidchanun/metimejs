@@ -159,6 +159,10 @@ export default function StudentHome() {
   const [openChatAI, setOpenChatAI] = useState(false);
   const [openChatDev, setOpenChatDev] = useState(false);
   const router = useRouter()
+  const [user, setUser] = useState(null);
+  const [reports, setReports] = useState([]);
+
+
 
 
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -203,8 +207,6 @@ export default function StudentHome() {
 
     loadMood();
   }, []);
-
-
 
   const categories = [
     { id: 1, name: "ความเครียดจากการเรียน" },
@@ -275,13 +277,53 @@ export default function StudentHome() {
     loadIssues();
   }, []);
 
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const tokenCookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("auth_token="));
+
+        if (!tokenCookie) return;
+
+        const token = decodeURIComponent(tokenCookie.split("=")[1]);
+
+        const res = await fetch("/api/v1/user/id", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+
+        const data = await res.json();
+        if (data.UserLocalDB) setUser(data.UserLocalDB);
+      } catch (err) {
+        console.error("โหลดข้อมูลผู้ใช้ล้มเหลว", err);
+      }
+    }
+
+    loadUser();
+  }, []);
+
+  useEffect(() => {
+    async function loadReports() {
+      const res = await fetch("/api/v1/report-status");
+      const { result } = await res.json();
+      setReports(result);
+    }
+
+    loadReports();
+  }, []);
+
+
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 sm:gap-2">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-black">สวัสดี 👋</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-black">
+              สวัสดี {user ? `${user.fname} ${user.lname}` : ""}
+            </h1>
             <p className="text-slate-500 text-sm sm:text-base">
               ดูภาพรวมช่วงนี้และเริ่มใช้งานอย่างรวดเร็ว
             </p>
@@ -347,7 +389,7 @@ export default function StudentHome() {
                 )}
               >
                 {moods.map((m, i) => (
-                  <div key={i} className={cx("text-center", isMobile && "min-w-[44px]")}>
+                  <div key={i} className={cx("text-center", isMobile && "min-w-:44px")}>
                     <div className={cx("h-10 w-full rounded-xl", moodColor(m.mood))} />
                     <div className="mt-1 text-[10px] sm:text-xs text-slate-500">{m.d}</div>
                   </div>
@@ -414,27 +456,27 @@ export default function StudentHome() {
       </Modal>
 
       {/* Modal: ห้องแชท AI BigBot */}
-      {/* Modal: ห้องแชท AI BigBot */}
-<Modal
-  open={openChatAI}
-  onClose={() => setOpenChatAI(false)}
-  title={
-    <div className="flex items-center gap-2">
-      <Image
-        src="/img/images.jpg"        // รูปที่อยู่ใน public/img/images.jpg
-        alt="BigBot Avatar"
-        width={40}
-        height={40}
-        className="rounded-full"
-      />
-      <span>ห้องแชท AI BigBot</span>
-    </div>
-  }
->
-  <div className="h-[70vh]">
-    <ChatComponent />
-  </div>
-</Modal>
+      
+      <Modal
+        open={openChatAI}
+        onClose={() => setOpenChatAI(false)}
+        title={
+          <div className="flex items-center gap-2">
+            <Image
+              src="/img/images.jpg"
+              alt="BigBot Avatar"
+              width={40}
+              height={40}
+              className="rounded-full"
+            />
+            <span>ห้องแชท AI BigBot</span>
+          </div>
+        }
+      >
+        <div className="h-[70vh]">
+          <ChatComponent />
+        </div>
+      </Modal>
 
     </main>
   );
