@@ -18,8 +18,8 @@ export default function ChatMessage({ message, role }) {
 
       <div
         className={`text-lg max-w-[70%] px-4 py-2 rounded-2xl whitespace-pre-wrap wrap-anywhere ${isStudent
-            ? "bg-blue-500 text-white self-end rounded-tr-none"
-            : "bg-gray-200 text-black self-start rounded-tl-none"
+          ? "bg-blue-500 text-white self-end rounded-tr-none"
+          : "bg-gray-200 text-black self-start rounded-tl-none"
           }`}
       >
         {safeMessage}

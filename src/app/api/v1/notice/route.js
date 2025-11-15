@@ -14,7 +14,6 @@ export async function POST(request) {
         const body = await request.json();
         const { message, token } = body;
 
-        console.log("pass1")
 
         if (!message || message.trim() === "") {
             return NextResponse.json(
@@ -22,12 +21,10 @@ export async function POST(request) {
                 { status: 400 }
             );
         }
-        console.log("pass2")
 
         if (!token) {
             return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
         }
-        console.log("pass3")
 
         const [row_token] = await db.query(
             "SELECT * FROM user_tokens WHERE token = ?", [token]
@@ -36,12 +33,11 @@ export async function POST(request) {
         if (row_token.length == 0) {
             return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
         }
-        console.log("pass4")
 
         const UserTokenLocalDB = await row_token[0]
 
         const [row_user] = await db.query(
-            "SELECT * FROM users WHERE id = ?", UserTokenLocalDB.user_id
+            "SELECT * FROM users WHERE id = ?", [UserTokenLocalDB.user_id]
         )
 
         const UserLocalDB = await row_user[0]
@@ -50,8 +46,8 @@ export async function POST(request) {
             "SELECT * FROM notice WHERE user_id = ?", [UserLocalDB.id]
         )
 
-        if (check_notice.length >= 1){
-            return NextResponse.json({message : "โปรดรอฝ่ายพัฒนาตอบกลับ"}, {status : 400})
+        if (check_notice.length >= 1) {
+            return NextResponse.json({ message: "โปรดรอฝ่ายพัฒนาตอบกลับ" }, { status: 400 })
         }
 
 
@@ -71,5 +67,49 @@ export async function POST(request) {
             { error: "เกิดข้อผิดพลาดในการบันทึก notice" },
             { status: 500 }
         );
+    }
+}
+
+
+export async function PATCH(request) {
+    try {
+        const body = await request.json()
+        const { token, notice_id } = body
+        if (!token) {
+            return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
+        }
+
+        if (!notice_id) {
+            return NextResponse.json({ message: "ไม่พบการเเจ้งเตือน" }, { status: 400 })
+        }
+
+
+        const [row_token] = await db.query(
+            "SELECT * FROM user_tokens WHERE token = ?", [token]
+        )
+
+        if (row_token.length == 0) {
+            return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
+        }
+
+        const UserTokenLocalDB = await row_token[0]
+
+        const [row_user] = await db.query(
+            "SELECT * FROM users WHERE id = ?", [UserTokenLocalDB.user_id]
+        )
+
+        const UserLocalDB = await row_user[0]
+
+        if (UserLocalDB.role_id === 1) {
+            return NextResponse.json({message : "ไม่มีสิทธิ์ในการเข้าถึง"}, {status : 403})
+        }
+
+        await db.query(
+            "UPDATE notice SET status = ? WHERE notice_id = ?",["read", notice_id.notice_id]
+        )
+
+        return NextResponse.json({ message: "ok" }, { status: 200 })
+    } catch {
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
     }
 }

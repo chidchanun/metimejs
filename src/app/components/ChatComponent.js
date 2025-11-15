@@ -131,6 +131,8 @@ export default function ChatComponent({ role_id, roomId }) {
     chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  const myRole = role_id === 1 ? "student" : "teacher"
+
   return (
     <div className="flex flex-col h-full relative">
       <div
@@ -141,9 +143,15 @@ export default function ChatComponent({ role_id, roomId }) {
         }}
         className="flex-1 overflow-y-auto flex flex-col gap-2 p-2"
       >
-        {messages.map((m, i) => (
-          <ChatMessage key={i} message={m.message} role={m.role} />
-        ))}
+        {messages.map((m, i) => {
+          return (
+            <ChatMessage
+              key={i}
+              message={m.message}
+              role={m.role}
+            />
+          );
+        })}
       </div>
 
       {showScrollButton && (

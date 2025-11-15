@@ -6,6 +6,9 @@ import LogoutButton from "../components/LogoutButton";
 import AlertCard from "../components/AlertCard";
 import { FaBell } from "react-icons/fa";
 import ChatComponent from "../components/ChatComponent";
+import { FaArchive } from "react-icons/fa";
+import { IoMailUnread } from "react-icons/io5";
+
 
 function Modal({ open, onClose, title, children }) {
   const isOpen = !!open;
@@ -390,8 +393,12 @@ export default function TeacherDashboard() {
         <div className="mt-8 grid grid-cols-1 gap-6">
           {/* Helpdesk placeholder */}
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 p-4 font-medium">
+            <div className="border-b border-slate-200 p-4 font-medium flex flex-row items-center justify-between">
               แชทที่ขอความช่วยเหลือ
+              <div className="flex flex-row gap-4">
+                <IoMailUnread className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" />
+                <FaArchive className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" />
+              </div>
             </div>
 
             <ul className="divide-y divide-slate-100">
@@ -408,6 +415,16 @@ export default function TeacherDashboard() {
                           .find(row => row.startsWith("auth_token="));
                         const token = tokenCookie ? decodeURIComponent(tokenCookie.split("=")[1]) : null;
                         if (!token) throw new Error("โปรดเข้าสู่ระบบใหม่");
+
+                        const updateNotice = await fetch("/api/v1/notice", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ token: token, notice_id: n })
+                        })
+
+                        if (!updateNotice.ok) {
+                          return;
+                        }
 
                         const res = await fetch(`${API_BASE}/api/v1/room`, {
                           method: "POST",
