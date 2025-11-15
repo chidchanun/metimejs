@@ -9,6 +9,8 @@ import MoodPickerCard from "../components/MoodPickerCard";
 import LogoutButton from "../components/LogoutButton";
 import UserReportsList from "../components/UserReportsList";
 import ChatComponent from "../components/ChatComponent";
+import Image from "next/image";
+
 
 /**
  * Utilities
@@ -412,11 +414,28 @@ export default function StudentHome() {
       </Modal>
 
       {/* Modal: ห้องแชท AI BigBot */}
-      <Modal open={openChatAI} onClose={() => setOpenChatAI(false)} title="ห้องแชท AI BigBot">
-        <div className="h-[70vh]">
-          <ChatComponent />
-        </div>
-      </Modal>
+      {/* Modal: ห้องแชท AI BigBot */}
+<Modal
+  open={openChatAI}
+  onClose={() => setOpenChatAI(false)}
+  title={
+    <div className="flex items-center gap-2">
+      <Image
+        src="/img/images.jpg"        // รูปที่อยู่ใน public/img/images.jpg
+        alt="BigBot Avatar"
+        width={40}
+        height={40}
+        className="rounded-full"
+      />
+      <span>ห้องแชท AI BigBot</span>
+    </div>
+  }
+>
+  <div className="h-[70vh]">
+    <ChatComponent />
+  </div>
+</Modal>
+
     </main>
   );
 }
