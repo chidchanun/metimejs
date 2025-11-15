@@ -94,6 +94,11 @@ export default function TeacherDashboard() {
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3000";
   const [openChatTeacher, setOpenChatTeacher] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState(null);
+  // ▼ เพิ่มสองบรรทัดนี้
+  const [openMoreModal, setOpenMoreModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const SHORT_DESC_LIMIT = 25; // ปรับเลขได้ เช่น 20, 25, 30 ตัวอักษร
+  // ▲ เพิ่มสองบรรทัดนี้
   const [roomId, setRoomId] = useState()
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -469,6 +474,24 @@ export default function TeacherDashboard() {
               />
             </div>
           </Modal>
+          <Modal
+            open={openMoreModal}
+            onClose={() => setOpenMoreModal(false)}
+            title="รายละเอียดปัญหา"
+          >
+            {selectedReport ? (
+              <div className="text-sm space-y-2 max-h-[70vh] overflow-y-auto">
+                <div className="text-slate-500">รายละเอียด</div>
+                <p className="whitespace-pre-wrap">
+                  {selectedReport.description || "-"}
+                </p>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500">ไม่พบข้อมูลปัญหา</div>
+            )}
+          </Modal>
+
+
 
           {/* Issues */}
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -530,7 +553,21 @@ export default function TeacherDashboard() {
                       reports.map((r) => (
                         <tr key={r.report_id} className="border-t border-slate-100 align-top">
                           <td className="py-3 pr-2 sm:pr-4 font-medium whitespace-nowrap">#{r.report_id}</td>
-                          <td className="py-3 pr-2 sm:pr-4 wrap-anywhere">{r.description}</td>
+                          <td className="py-3 pr-2 sm:pr-4 whitespace-nowrap">
+                            <span
+                              className="inline-block      max-w-[180px]    /* ความกว้างคอลัมน์ ปรับได้ เช่น 160, 200 */ truncate cursor-pointer hover:underline"
+                              title={r.description || "-"}
+                              onClick={() => {
+                                setSelectedReport(r);      // เก็บแถวที่เลือก
+                                setOpenMoreModal(true);    // เปิดป๊อปอัป
+                              }}
+                            >
+                              {r.description && r.description.length > SHORT_DESC_LIMIT
+                                ? `${r.description.slice(0, SHORT_DESC_LIMIT)}...`
+                                : (r.description || "-")}
+                            </span>
+                          </td>
+
                           <td className="py-3 pr-2 sm:pr-4">{r.problem_type}</td>
                           <td className="py-3 pr-2 sm:pr-4">{r.problem_severe}</td>
                           <td className="py-3 pr-2 sm:pr-4 wrap-anywhere">{r.problem_where}</td>
