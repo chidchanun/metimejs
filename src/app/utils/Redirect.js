@@ -22,9 +22,9 @@ export async function Redirect() {
   const UserLocalDB = await res.json();
 
   if (UserLocalDB?.UserLocalDB?.role_id === 1) {
-    window.location.href = "http://localhost:3000/student-home"
+    window.location.href = "/student-home"
   } else if (UserLocalDB?.UserLocalDB?.role_id === 2) {
-    window.location.href = "http://localhost:3000/teacher"
+    window.location.href = "/teacher"
 
     // router.push("/teacher");
   }
