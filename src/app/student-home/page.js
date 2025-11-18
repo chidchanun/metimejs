@@ -319,7 +319,7 @@ export default function StudentHome() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 sm:gap-2">
+        <header className="flex items-start justify-between gap-2 px-4 sm:px-6 py-6 max-w-6xl mx-auto">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold text-black">
               สวัสดี {user ? `${user.fname} ${user.lname}` : ""}
@@ -328,8 +328,12 @@ export default function StudentHome() {
               ดูภาพรวมช่วงนี้และเริ่มใช้งานอย่างรวดเร็ว
             </p>
           </div>
-          <LogoutButton className="bg-red-600" />
+
+          {/* ปุ่ม logout แบบไอคอน */}
+          <LogoutButton />
         </header>
+
+
 
         {/* Quick actions */}
         <div className="mt-5 grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
@@ -456,7 +460,7 @@ export default function StudentHome() {
       </Modal>
 
       {/* Modal: ห้องแชท AI BigBot */}
-      
+
       <Modal
         open={openChatAI}
         onClose={() => setOpenChatAI(false)}
