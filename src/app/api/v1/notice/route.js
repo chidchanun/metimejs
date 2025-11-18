@@ -43,7 +43,7 @@ export async function POST(request) {
         const UserLocalDB = await row_user[0]
 
         const [check_notice] = await db.query(
-            "SELECT * FROM notice WHERE user_id = ?", [UserLocalDB.id]
+            "SELECT * FROM notice WHERE user_id = ? AND status = ?", [UserLocalDB.id, "unread"]
         )
 
         if (check_notice.length >= 1) {
@@ -101,15 +101,23 @@ export async function PATCH(request) {
         const UserLocalDB = await row_user[0]
 
         if (UserLocalDB.role_id === 1) {
-            return NextResponse.json({message : "ไม่มีสิทธิ์ในการเข้าถึง"}, {status : 403})
+            return NextResponse.json({ message: "ไม่มีสิทธิ์ในการเข้าถึง" }, { status: 403 })
         }
 
+        const [row_room] = await db.query(
+            "SELECT * FROM room WHERE teacher_id = ? AND room_activate = 1", [UserLocalDB.id]
+        )
+
+        const roomData = row_room[0]
+        console.log(roomData)
+
         await db.query(
-            "UPDATE notice SET status = ? WHERE notice_id = ?",["read", notice_id.notice_id]
+            "UPDATE notice SET status = ? , room_id = ? WHERE notice_id = ?", ["read", roomData.room_id, notice_id.notice_id]
         )
 
         return NextResponse.json({ message: "ok" }, { status: 200 })
-    } catch {
+    } catch (e) {
+        console.log(e)
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
     }
 }

@@ -74,6 +74,84 @@ function Modal({ open, onClose, title, children }) {
     </div>
   );
 }
+function ModalChat({ open, onClose, title, children, roomId }) {
+  const isOpen = !!open;
+  const dialogRef = useRef(null);
+  const lastFocusedEl = useRef(null);
+  console.log("Parent roomId:", roomId)
+  const esc = useCallback(
+    (e) => {
+      if (e.key === "Escape") onClose?.();
+    },
+    [onClose]
+  );
+
+  const onCloseChat = async () => {
+    const updateRoom = await fetch("api/v1/room", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room_id: roomId })
+    });
+
+    if (!updateRoom.ok) {
+      return;
+    }
+
+    onClose(); // <-- ต้องเรียก
+  }
+
+  // ล็อกสกอร์ลเมื่อโมดัลเปิด + ฟังปุ่ม ESC
+  useEffect(() => {
+    if (!isOpen) return;
+    if (typeof document !== "undefined") {
+      document.documentElement.style.overflow = "hidden";
+    }
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("keydown", esc);
+      if (typeof document !== "undefined") {
+        document.documentElement.style.overflow = "";
+      }
+    };
+  }, [isOpen, esc]);
+
+  // โฟกัสภายในโมดัล (focus trap อย่างง่าย)
+  useEffect(() => {
+    if (!isOpen) return;
+    lastFocusedEl.current = document.activeElement;
+    dialogRef.current?.focus();
+    return () => {
+      lastFocusedEl.current?.focus?.();
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
+        <div
+          ref={dialogRef}
+          tabIndex={-1}
+          className="w-full max-w-xl sm:max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 outline-none"
+        >
+          <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-200">
+            <h3 className="font-semibold text-base sm:text-lg text-black">{title}</h3>
+            <button
+              onClick={onCloseChat}
+              className="rounded-lg px-2 py-1 text-slate-600 hover:bg-slate-100"
+              aria-label="ปิด"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="p-4 sm:p-5">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Tile({ title, value }) {
   return (
@@ -103,7 +181,8 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reports, setReports] = useState([]);
-
+  const [filter, setFilter] = useState("unread");
+  const [message, setMessage] = useState([])
   // Alert state
   const [alertTitle, setAlertTitle] = useState("");
   const [alertDetail, setAlertDetail] = useState("");
@@ -144,7 +223,7 @@ export default function TeacherDashboard() {
     }
 
     try {
-      const resUser = await fetch(`${API_BASE}/api/v1/user/id`, {
+      const resUser = await fetch("/api/v1/user/id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: tokenValue }),
@@ -168,7 +247,7 @@ export default function TeacherDashboard() {
 
     async function loadNotices() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/notice`, { cache: "no-store" });
+        const res = await fetch("/api/v1/notice", { cache: "no-store" });
         if (!res.ok) throw new Error("โหลด notice ล้มเหลว");
         const data = await res.json();
         if (alive && data?.result) {
@@ -199,19 +278,19 @@ export default function TeacherDashboard() {
         setError(null);
 
         // 1) รายการรีพอร์ต
-        const resReports = await fetch(`${API_BASE}/api/v1/report`, { cache: "no-store" });
+        const resReports = await fetch("/api/v1/report", { cache: "no-store" });
         if (!resReports.ok) throw new Error(`HTTP ${resReports.status}`);
         const dataReports = await resReports.json();
         const list = Array.isArray(dataReports?.result) ? dataReports.result : [];
 
         // 2) รายการสถานะทั้งหมด (สำหรับ select)
-        const resStatuses = await fetch(`${API_BASE}/api/v1/report/status`, { cache: "no-store" });
+        const resStatuses = await fetch("/api/v1/report/status", { cache: "no-store" });
         if (!resStatuses.ok) throw new Error(`HTTP ${resStatuses.status}`);
         const dataStatuses = await resStatuses.json();
         const allStatuses = Array.isArray(dataStatuses?.result) ? dataStatuses.result : [];
 
         // 3) สถานะของแต่ละรีพอร์ต (map report_id -> status_id)
-        const resRS = await fetch(`${API_BASE}/api/v1/report/report-status`, { cache: "no-store" });
+        const resRS = await fetch("/api/v1/report/report-status", { cache: "no-store" });
         if (!resRS.ok) throw new Error(`HTTP ${resRS.status}`);
         const dataRS = await resRS.json();
         const arrRS = Array.isArray(dataRS?.result) ? dataRS.result : [];
@@ -271,7 +350,7 @@ export default function TeacherDashboard() {
 
     setSavingStatus((s) => ({ ...s, [rId]: true }));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/report/status`, {
+      const res = await fetch("/api/v1/report/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ report_id: rId, status_id: sId }),
@@ -303,6 +382,12 @@ export default function TeacherDashboard() {
     ).length;
     return { queue: total, inProgress: 0, closedToday: todayCount };
   }, [reports]);
+
+  const filteredNotices = notices.filter(n => {
+    if (filter === "unread") return n.status === "unread";
+    if (filter === "read") return n.status === "read";
+    return true; // all
+  });
 
   function ReportCard({ r }) {
     return (
@@ -346,7 +431,7 @@ export default function TeacherDashboard() {
 
           {r.image_url ? (
             <a
-              href={r.image_url.startsWith("http") ? r.image_url : `${API_BASE}${r.image_url}`}
+              href={r.image_url.startsWith("http") ? r.image_url : `http://localhost:3000${r.image_url}`}
               className="shrink-0 underline text-sm"
               target="_blank"
               rel="noreferrer"
@@ -401,14 +486,14 @@ export default function TeacherDashboard() {
             <div className="border-b border-slate-200 p-4 font-medium flex flex-row items-center justify-between">
               แชทที่ขอความช่วยเหลือ
               <div className="flex flex-row gap-4">
-                <IoMailUnread className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" />
-                <FaArchive className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" />
+                <IoMailUnread className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" onClick={() => setFilter("unread")} />
+                <FaArchive className="w-5 h-5 cursor-pointer hover:text-gray-400 transition-transform" onClick={() => setFilter("read")} />
               </div>
             </div>
 
             <ul className="divide-y divide-slate-100">
               <li className="p-4 text-slate-500">
-                {notices.map((n, idx) => (
+                {filteredNotices.map((n, idx) => (
                   <div
                     key={idx}
                     onClick={async () => {
@@ -421,17 +506,33 @@ export default function TeacherDashboard() {
                         const token = tokenCookie ? decodeURIComponent(tokenCookie.split("=")[1]) : null;
                         if (!token) throw new Error("โปรดเข้าสู่ระบบใหม่");
 
-                        const updateNotice = await fetch("/api/v1/notice", {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ token: token, notice_id: n })
-                        })
 
-                        if (!updateNotice.ok) {
-                          return;
-                        }
 
-                        const res = await fetch(`${API_BASE}/api/v1/room`, {
+                        // if (n.status === "read") {
+                        //   const resHistory = await fetch("/api/v1/history/id",
+                        //     {
+                        //       method: "POST",
+                        //       headers: { "Content-Type": "application/json" },
+                        //       body: JSON.stringify(
+                        //         { room_id: n.room_id }
+                        //       )
+
+                        //     }
+                        //   )
+                        //   if (!resHistory.ok) {
+                        //     return;
+                        //   }
+                        //   setRoomId(n.room_id)
+
+                        //   const ChatHistory = await resHistory.json()
+
+                        //   setMessage(ChatHistory)
+                        //   setOpenChatTeacher(true);
+
+                        //   return;
+                        // }
+
+                        const res = await fetch("/api/v1/room", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ token, student_id: n.user_id })
@@ -440,9 +541,18 @@ export default function TeacherDashboard() {
                         const data = await res.json();
                         if (!res.ok) throw new Error(data.message || "สร้างห้องไม่สำเร็จ");
 
-                        // บันทึก room_id ลงใน state เพื่อนำไป init WS
-                        setRoomId(data.room_id)
+                        setRoomId(data.room_id);
                         setOpenChatTeacher(true);
+
+                        const updateNotice = await fetch("/api/v1/notice", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ token: token, notice_id: n })
+                        });
+
+                        if (!updateNotice.ok) {
+                          return;
+                        }
                       } catch (err) {
                         alert(err.message);
                       }
@@ -459,9 +569,10 @@ export default function TeacherDashboard() {
           {/* =============================
           Modal ห้องแชท ฝ่ายพัฒนา
       ============================== */}
-          <Modal
+          <ModalChat
             open={openChatTeacher}
             onClose={() => setOpenChatTeacher(false)}
+            roomId={roomId}
             title="ห้องแชท ฝ่ายพัฒนา"
           >
             <div className="h-[70vh]">
@@ -471,9 +582,10 @@ export default function TeacherDashboard() {
                 student_id={selectedNotice?.student_id}
                 notice={selectedNotice}
                 roomId={roomId}
+                message={message}
               />
             </div>
-          </Modal>
+          </ModalChat>
           <Modal
             open={openMoreModal}
             onClose={() => setOpenMoreModal(false)}
@@ -598,7 +710,7 @@ export default function TeacherDashboard() {
                           <td className="py-3 pr-2 sm:pr-4 whitespace-nowrap">
                             {r.image_url ? (
                               <a
-                                href={r.image_url.startsWith("http") ? r.image_url : `${API_BASE}${r.image_url}`}
+                                href={r.image_url.startsWith("http") ? r.image_url : `http://localhost:3000${r.image_url}`}
                                 className="underline"
                                 target="_blank"
                                 rel="noreferrer"

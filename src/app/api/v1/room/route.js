@@ -30,10 +30,9 @@ export async function POST(request) {
         }
 
         const [existRoom] = await db.query(
-            "SELECT * FROM room WHERE student_id = ? AND teacher_id = ?",
-            [student_id, teacher.id]
+            "SELECT * FROM room WHERE student_id = ? AND teacher_id = ? AND room_activate = ?",
+            [student_id, teacher.id, 1]
         );
-        console.log(existRoom)
 
         if (existRoom.length > 0) {
             return NextResponse.json({
@@ -58,19 +57,21 @@ export async function POST(request) {
     }
 }
 
-export async function DELETE(request){
+export async function PATCH(request) {
     try {
         const body = await request.json()
-        const {token} = body
-
-        if (!token) {
-            return NextResponse.json({ message: "โปรดเข้าสู่ระบบใหม่อีกครั้ง" }, { status: 401 });
+        const {room_id} = body
+        if (!room_id){
+            return NextResponse.json({ message: "ไม่พบห้องสนทนา" }, { status: 400 })
         }
 
-        const [row_token] = await db.query(
-            "SELECT * FROM user_tokens WHERE token = ?", [token]
+        await db.query(
+            "UPDATE room SET room_activate = 0 WHERE room_id = ?", [room_id]
         )
+
+        return NextResponse.json({message : "ok"}, {status : 200})
     } catch {
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
 
     }
 }
