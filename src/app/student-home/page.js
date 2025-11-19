@@ -8,6 +8,7 @@ import IssueReportForm from "../components/IssueReportForm";
 import MoodPickerCard from "../components/MoodPickerCard";
 import LogoutButton from "../components/LogoutButton";
 import ChatComponent from "../components/ChatComponent";
+import BottomMenu from "../components/BottomMenu";
 import Image from "next/image";
 
 /**
@@ -162,6 +163,14 @@ const moodBg = (m) =>
   very_bad: "bg-rose-500",
 }[m] || "bg-slate-300");
 
+const EMOJI_IMAGES = {
+  1: "/img/emojidedee.png",
+  2: "/img/emojiok.png",
+  3: "/img/emojiverysad.png",
+  4: "/img/emojiverysad.png",
+};
+
+
 export default function StudentHome() {
   const [loading, setLoading] = useState(true);
   const [moods, setMoods] = useState([]);
@@ -176,6 +185,8 @@ export default function StudentHome() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [reports, setReports] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(10);
+
 
   const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -195,14 +206,19 @@ export default function StudentHome() {
           cache: "no-store",
         });
         const { data } = await res.json();
-
+        console.log("user-emotion data =", data);
         setMoods(
-          data.map((row) => ({
-            d: new Date(row.created_at).toLocaleDateString("th-TH", {
-              weekday: "short",
-            }),
-            mood: row.emotion,
-          }))
+          data
+            .reverse()
+            .slice(0, 6)
+            .map((row) => ({
+              d: new Date(row.created_at).toLocaleDateString("th-TH", {
+                weekday: "long",
+
+              }).replace("วัน", ""),
+
+              mood: row.emotion_id,
+            }))
         );
 
         const todayStr = new Date().toDateString();
@@ -324,7 +340,24 @@ export default function StudentHome() {
     month: "2-digit",
     year: "2-digit",
   });
+  function moodImage(moodId) {
+    const src = EMOJI_IMAGES[moodId];
 
+
+    if (!src) {
+      return <span className="text-3xl">😐</span>;
+    }
+
+    return (
+      <Image
+        src={src}
+        alt={String(moodId)}
+        width={96}
+        height={96}
+        className="object-contain"
+      />
+    );
+  }
   return (
     <main className="min-h-screen bg-[#F5F7FA] flex flex-col">
       {/* Header — วางนอก container เพื่อให้เต็มจอ */}
@@ -347,7 +380,7 @@ export default function StudentHome() {
         {/* กล่องหลักสีขาวตามดีไซน์ */}
         <div className="mt-6 flex-1">
           <div className="  px-4 sm:px-8 py-6 sm:py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-[0.35fr_0.65fr] gap-8">
               {/* ซ้าย: วันนี้ + อีโมจิอารมณ์ */}
               <div>
                 {/* บรรทัด วันนี้ + วันที่ + วงกลม + */}
@@ -372,29 +405,19 @@ export default function StudentHome() {
                   </div>
                 </div>
 
-                {/* emoji ตามวัน */}
                 <div className="mt-8 grid grid-cols-3 gap-6 max-w-xs">
-                  {(loading ? Array.from({ length: 6 }) : moods).map(
-                    (m, idx) => (
-                      <div
-                        key={idx}
-                        className="flex flex-col items-center text-center"
-                      >
-                        <div
-                          className={cx(
-                            "h-16 w-16 sm:h-18 sm:w-18 rounded-full flex items-center justify-center text-3xl shadow",
-                            m ? moodBg(m.mood) : "bg-slate-200"
-                          )}
-                        >
-                          {m ? moodEmoji(m.mood) : "…"}
-                        </div>
-                        <div className="mt-2 text-xs sm:text-sm text-slate-600">
-                          {m ? m.d : "-"}
-                        </div>
+                  {(loading ? Array.from({ length: 6 }) : moods).map((m, idx) => (
+                    <div key={idx} className="flex flex-col items-center text-center">
+                      <div className="h-20 w-20 sm:h-18 sm:w-18 rounded-full flex items-center justify-center  ">
+                        {m ? moodImage(m.mood) : "…"}
                       </div>
-                    )
-                  )}
+                      <div className="mt-2 text-xs sm:text-sm text-slate-600">
+                        {m ? m.d : "-"}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+
 
               </div>
 
@@ -412,14 +435,14 @@ export default function StudentHome() {
                   </QuickButton> */}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-h-320px overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-h-320px overflow-y-auto pr-1 pb-2">
                   {myIssues.length === 0 && (
                     <div className="text-sm text-slate-500 col-span-2">
                       ยังไม่มีการรายงานปัญหา
                     </div>
                   )}
 
-                  {myIssues.map((issue) => (
+                  {myIssues.slice(0, visibleCount).map((issue) => (
                     <div
                       key={issue.id}
                       className="flex items-center justify-between w-full rounded-2xl bg-white px-5 py-4 shadow-sm"
@@ -448,6 +471,16 @@ export default function StudentHome() {
                     </div>
                   ))}
                 </div>
+                {/* LOAD MORE BUTTON */}
+                {visibleCount < myIssues.length && (
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + 10)}
+                    className="mt-3 px-4 py-1 bg-slate-200 text-slate-700 text-sm rounded-md hover:bg-slate-300 transition self-center"
+                  >
+                    โหลดเพิ่ม
+                  </button>
+                )}
+
                 {/* ปุ่มห้องแชท */}
                 {/* <div className="mt-5 flex flex-wrap gap-3">
                   <QuickButton
@@ -467,64 +500,7 @@ export default function StudentHome() {
       </div>
 
       {/* แถบเมนูด้านล่าง + ปุ่ม + ใหญ่ */}
-      <footer className="relative mt-6 bg-[#cdeee4]">
-        <div className="mx-auto max-w-md w-full pb-18 pt-4 relative">
-
-          {/* ปุ่ม + ใหญ่ตรงกลาง */}
-          <button
-            onClick={() => setOpenReport(true)}
-            className="absolute left-1/2 -top-10 -translate-x-1/2 h-20 w-20 rounded-full bg-[#2fb297] flex items-center justify-center text-4xl text-white shadow-xl border-4 border-[#cdeee4]"
-          >
-            +
-          </button>
-
-          {/* icon menu */}
-          <div className="flex justify-between px-10 text-slate-700 gap-8">
-
-            {/* หน้าแรก */}
-            <button aria-label="หน้าแรก" className="flex flex-col items-center">
-              <Image
-                src="/img/icon_home.png"
-                alt="หน้าแรก"
-                width={32}
-                height={32}
-              />
-            </button>
-
-            {/* เพลงผ่อนคลาย */}
-            <button aria-label="เพลงผ่อนคลาย" className="flex flex-col items-center">
-              <Image
-                src="/img/icon_music.png"
-                alt="เพลง"
-                width={32}
-                height={32}
-              />
-            </button>
-
-            {/* AI Activities */}
-            <button aria-label="กิจกรรมดีๆ" className="flex flex-col items-center">
-              <Image
-                src="/img/icon_AI.png"
-                alt="AI"
-                width={32}
-                height={32}
-              />
-            </button>
-
-            {/* ห้องแชท */}
-            <button aria-label="ห้องแชท" className="flex flex-col items-center">
-              <Image
-                src="/img/icon_chat.png"
-                alt="แชท"
-                width={32}
-                height={32}
-              />
-            </button>
-
-          </div>
-        </div>
-      </footer>
-
+      <BottomMenu setOpenReport={setOpenReport} />
 
       {/* Modal: รายงานปัญหา */}
       <Modal open={openReport} onClose={() => setOpenReport(false)} title="รายงานปัญหา">

@@ -264,11 +264,11 @@ export default function LoginPage() {
 
         <div className="mb-8 text-center">
           {/* Logo Placeholder */}
-          <div className="mx-auto w-24 h-24 flex items-center justify-center mb-4">
+          <div className="mx-auto w-60 h-40 flex items-center justify-center mb-4">
             <Image
-              src="/img/Metimelogo.jpg"
-              width={600}
-              height={600}
+              src="/img/logo_MEtime_colored.png"
+              width={900}
+              height={900}
               alt="Logo"
               className="object-contain"
             />
