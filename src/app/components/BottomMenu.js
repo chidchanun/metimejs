@@ -7,13 +7,13 @@ export default function BottomMenu({ setOpenReport }) {
         {/* ปุ่ม + ใหญ่ตรงกลาง */}
         <button
           onClick={() => setOpenReport(true)}
-          className="absolute left-1/2 -top-10 -translate-x-1/2 h-28 w-28 rounded-full bg-[#2fb297] flex items-center justify-center text-4xl text-white shadow-xl border-4 border-[#cdeee4]"
+          className="absolute left-1/2 -top-10 -translate-x-1/2 h-20 w-20 rounded-full bg-[#2fb297] flex items-center justify-center text-4xl text-white shadow-xl border-4 border-[#cdeee4]"
         >
           +
         </button>
 
         {/* icon menu */}
-        <div className="flex justify-between px-10 text-slate-700 gap-6">
+        <div className="flex justify-between px-10 text-slate-700 gap-6 md:gap-12 lg:gap-20">
           {/* หน้าแรก */}
           <button aria-label="หน้าแรก" className="flex flex-col items-center">
             <Image src="/img/icon_home.png" alt="หน้าแรก" width={32} height={32} />
