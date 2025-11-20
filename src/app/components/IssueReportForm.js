@@ -287,7 +287,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
 
           <input
             type="date"
-            className="w-full rounded-xl border border-none px-3 py-2 text-sm outline-none bg-white "
+            className="w-full rounded-xl border border-none px-2 py-6 text-sm outline-none bg-white "
             value={happenedAt}
             placeholder="วันที่เจอ"
             onChange={(e) => setHappenedAt(e.target.value)}
@@ -296,7 +296,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
           {showTime && (
             <input
               type="time"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none mt-1"
+              className="w-full rounded-xl border border-slate-300 px-2 py-6 text-sm outline-none mt-1"
               value={happenedTime}
               onChange={(e) => setHappenedTime(e.target.value)}
               step={60}
@@ -312,7 +312,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
 
           <input
             type="text"
-            className="w-full rounded-xl border border-none px-3 py-2 text-sm outline-none bg-white"
+            className="w-full rounded-xl border border-none px-2 py-6 text-sm outline-none bg-white"
             value={problemWhere}
             onChange={(e) => setProblemWhere(e.target.value)}
             placeholder="เช่น วิทยาลัย / บ้าน"
@@ -328,7 +328,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
           <div className="relative w-full">
             <label
               htmlFor="file-upload"
-              className="block w-full rounded-xl border border-none px-3 py-2 text-sm text-slate-400 cursor-pointer bg-white text-center"
+              className="block w-full rounded-xl border border-none px-8 py-6 text-sm text-slate-400 cursor-pointer bg-white text-center"
             >
               {file ? file.name : "รูปภาพ"}
             </label>
