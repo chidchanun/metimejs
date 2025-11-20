@@ -14,7 +14,7 @@ export default function BottomMenu({ setOpenReport }) {
                      h-20 w-20 rounded-full bg-[#2fb297] 
                      flex items-center justify-center 
                      text-4xl text-white shadow-xl 
-                     border-4 border-[#cdeee4]"
+                     border-4 border-[#cdeee4] z-99"
         >
           +
         </button>
