@@ -1,5 +1,5 @@
 import Image from "next/image";
-
+import Link from "next/link";
 export default function BottomMenu({ setOpenReport }) {
   return (
     <footer className="bg-[#cdeee4] bottom-0 fixed w-full left-0 h-24 flex justify-center">
@@ -21,15 +21,16 @@ export default function BottomMenu({ setOpenReport }) {
 
         {/* Bottom Menu */}
         <div className="absolute bottom-0 left-0 w-full h-full flex items-end justify-between px-6 pb-4">
-
-          <button aria-label="หน้าแรก" className="flex flex-col items-center">
-            <Image src="/img/icon_home.png" alt="หน้าแรก" width={32} height={32} />
-          </button>
-
-          <button aria-label="เพลงผ่อนคลาย" className="flex flex-col items-center">
-            <Image src="/img/icon_music.png" alt="เพลง" width={32} height={32} />
-          </button>
-
+          <Link href="/student-home">
+            <button aria-label="หน้าแรก" className="flex flex-col items-center">
+              <Image src="/img/icon_home.png" alt="หน้าแรก" width={32} height={32} />
+            </button>
+          </Link>
+          <Link href="/song">
+            <button aria-label="เพลงผ่อนคลาย" className="flex flex-col items-center">
+              <Image src="/img/icon_music.png" alt="เพลง" width={32} height={32} />
+            </button>
+          </Link>
           <button aria-label="กิจกรรมดีๆ" className="flex flex-col items-center">
             <Image src="/img/icon_AI.png" alt="AI" width={32} height={32} />
           </button>
