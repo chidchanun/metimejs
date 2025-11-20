@@ -113,17 +113,17 @@ function Modal({ open, onClose, title, children }) {
 
   return (
     <div
-      className="fixed inset-0 z-60"
+      className="fixed inset-0 z-60 "
       role="dialog"
       aria-modal="true"
       aria-label={typeof title === "string" ? title : undefined}
     >
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
+      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4 ">
         <div
           ref={dialogRef}
           tabIndex={-1}
-          className="w-full max-w-xl sm:max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 outline-none"
+          className="w-full max-w-xl sm:max-w-2xl rounded-2xl shadow-2xl border border-slate-200 outline-none bg-[#F5F7FA]"
         >
           <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-200">
             <h3 className="font-semibold text-base sm:text-lg text-black">
@@ -175,7 +175,6 @@ export default function StudentHome() {
   const [loading, setLoading] = useState(true);
   const [moods, setMoods] = useState([]);
   const [myIssues, setMyIssues] = useState([]);
-  const [, setMyChats] = useState([]); // ยังไม่ได้ใช้
   const [openReport, setOpenReport] = useState(false);
   const [hasMoodToday, setHasMoodToday] = useState(false);
   const [openMood, setOpenMood] = useState(false);
@@ -511,9 +510,9 @@ export default function StudentHome() {
 
       {/* แถบเมนูด้านล่าง + ปุ่ม + ใหญ่ */}
       <BottomMenu setOpenReport={setOpenReport} />
-
+      
       {/* Modal: รายงานปัญหา */}
-      <Modal open={openReport} onClose={() => setOpenReport(false)} title="รายงานปัญหา">
+      <Modal open={openReport} onClose={() => setOpenReport(false)} title="รายงานปัญหา" >
         <IssueReportForm
           endpoint="/api/v1/report"
           categories={categories}

@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getToken } from "../utils/getToken";
-
+import Image from "next/image";
 /**
  * ฟอร์มรายงานปัญหา (JavaScript)
  * - หน้าตา/ลำดับฟิลด์ใกล้เคียงภาพตัวอย่าง
@@ -163,8 +163,8 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
         <div className="relative mt-1">
           <select
             className={
-              "w-full appearance-none rounded-full border border-[#DFE7F2] " +
-              "bg-white px-4 py-3 pr-10 text-sm text-center shadow-sm outline-none " +
+              "w-full appearance-none rounded-2xl border border-[#DFE7F2] " +
+              "bg-white px-4 py-3 pr-10 text-sm text-center  outline-none " +
               "focus:ring-2 focus:ring-[#C3D6F4] " +
               (problemType ? "text-slate-700" : "text-slate-400")
             }
@@ -184,7 +184,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
 
           {/* ลูกศรขวา */}
           <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
-            ▾
+
           </div>
         </div>
       </div>
@@ -212,12 +212,12 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
               name: "ช่วยด้วยย",
               img: "/img/emoji1.png",
             },
-          ].map((s) => {
+          ].map((s, index) => {
             const selected = String(problemSevere) === String(s.id);
 
             return (
               <button
-                key={s.id}
+                key={s.id ?? `severe-${index}`}   // ✅ ป้องกัน key ซ้ำ
                 type="button"
                 onClick={() => setProblemSevere(String(s.id))}
                 className={
@@ -225,11 +225,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
                   (selected ? "opacity-100" : "opacity-60 hover:opacity-90")
                 }
               >
-                <img
-                  src={s.img}
-                  alt={s.name}
-                  className="w-14 h-14 object-contain"
-                />
+                <Image src={s.img} alt={s.name} className="w-14 h-14 object-contain" width={0} height={0} loading="lazy" />
 
                 {selected && (
                   <div className="mt-1 text-sm font-medium text-slate-800 text-center">
@@ -280,7 +276,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       </div>
 
       {/* 3 อันเรียงกันด้านล่าง */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 ">
 
         {/* --- วันที่เจอปัญหาเดิม --- */}
         <div className="space-y-1">
@@ -288,10 +284,12 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
             วันที่เจอ
           </label>
 
+
           <input
             type="date"
-            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none"
+            className="w-full rounded-xl border border-none px-3 py-2 text-sm outline-none bg-white "
             value={happenedAt}
+            placeholder="วันที่เจอ"
             onChange={(e) => setHappenedAt(e.target.value)}
           />
 
@@ -314,7 +312,7 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
 
           <input
             type="text"
-            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none"
+            className="w-full rounded-xl border border-none px-3 py-2 text-sm outline-none bg-white"
             value={problemWhere}
             onChange={(e) => setProblemWhere(e.target.value)}
             placeholder="เช่น วิทยาลัย / บ้าน"
@@ -327,12 +325,21 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
             รูปภาพ
           </label>
 
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="w-full text-sm border border-slate-300 rounded-xl px-3 py-2"
-          />
+          <div className="relative w-full">
+            <label
+              htmlFor="file-upload"
+              className="block w-full rounded-xl border border-none px-3 py-2 text-sm text-slate-400 cursor-pointer bg-white text-center"
+            >
+              {file ? file.name : "รูปภาพ"}
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files[0])}
+              className="hidden"
+            />
+          </div>
 
           {file && (
             <p className="text-xs text-slate-500 text-center">
