@@ -186,9 +186,11 @@ export default function StudentHome() {
   const [user, setUser] = useState(null);
   const [reports, setReports] = useState([]);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [visibleCountMobile, setVisibleCountMobile] = useState(5);
 
 
   const isMobile = useMediaQuery("(max-width: 640px)");
+
 
   // ตรวจว่าวันนี้เคยบันทึกหรือยัง (ฝั่ง client)
   useEffect(() => {
@@ -341,7 +343,7 @@ export default function StudentHome() {
     year: "2-digit",
   });
 
-  const showCount = isMobile ? 5 : visibleCount;
+  const showCount = isMobile ? visibleCountMobile : visibleCount;
 
   function moodImage(moodId) {
     const src = EMOJI_IMAGES[moodId];
@@ -475,16 +477,20 @@ export default function StudentHome() {
                   ))}
                 </div>
                 {/* LOAD MORE BUTTON */}
-                {!isMobile && visibleCount < myIssues.length && (
+                {showCount < myIssues.length && (
                   <button
-                    onClick={() => setVisibleCount(prev => prev + 10)}
+                    onClick={() => {
+                      if (isMobile) {
+                        setVisibleCountMobile((prev) => prev + 5);   // มือถือ เพิ่มทีละ 5
+                      } else {
+                        setVisibleCount((prev) => prev + 10);        // จอใหญ่ เพิ่มทีละ 10 (เหมือนเดิม)
+                      }
+                    }}
                     className="mt-3 px-4 py-1 bg-slate-200 text-slate-700 text-sm rounded-md hover:bg-slate-300 transition self-center"
                   >
                     โหลดเพิ่ม
                   </button>
                 )}
-
-
                 {/* ปุ่มห้องแชท */}
                 {/* <div className="mt-5 flex flex-wrap gap-3">
                   <QuickButton
@@ -546,7 +552,7 @@ export default function StudentHome() {
         }
       >
         <div className="h-[70vh]">
-          <ChatComponent role_id={1}/>
+          <ChatComponent role_id={1} />
         </div>
       </Modal>
     </main>

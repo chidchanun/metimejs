@@ -155,19 +155,25 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
       )}
 
       {/* 1) เลือกประเภทปัญหา */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700">
-          คุณไปเจอปัญหาแบบไหนมา
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-slate-700 text-center">
+          ไปเจออะไรมา บอกเราได้นะ
         </label>
-        <div className="relative">
+
+        <div className="relative mt-1">
           <select
-            className="w-full appearance-none rounded-xl border border-slate-300 px-3 py-2 pr-9 text-sm outline-none focus:ring-2 focus:ring-slate-300 bg-white"
+            className={
+              "w-full appearance-none rounded-full border border-[#DFE7F2] " +
+              "bg-white px-4 py-3 pr-10 text-sm text-center shadow-sm outline-none " +
+              "focus:ring-2 focus:ring-[#C3D6F4] " +
+              (problemType ? "text-slate-700" : "text-slate-400")
+            }
             value={problemType}
             onChange={(e) => setProblemType(e.target.value)}
             required
           >
             <option value="" disabled>
-              -- เลือกประเภทปัญหา --
+              เลือกประเภทปัญหา
             </option>
             {types.map((t) => (
               <option key={t.problemType_id} value={t.problemType_id}>
@@ -175,128 +181,168 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
               </option>
             ))}
           </select>
-          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">▾</div>
+
+          {/* ลูกศรขวา */}
+          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
+            ▾
+          </div>
         </div>
       </div>
 
       {/* 2) อีโมจิระดับความรุนแรง */}
-      <div className="space-y-2">
-        <div className="text-sm font-medium text-slate-700">
-          ตอนนี้คุณเป็นอย่างไรกับปัญหาที่พบ
+      <div className="space-y-3">
+        <div className="text-sm font-medium text-slate-700 text-center">
+          ปัญหานี้รุนแรงแค่ไหน
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {severes.map((s) => {
-            const selected = String(s.problemSevere_id) === String(problemSevere);
+
+        <div className="grid grid-cols-3 gap-3 bg-[#C3E8D2] rounded-3xl py-4 px-2">
+          {[
+            {
+              id: severes?.[0]?.problemSevere_id,
+              name: "พอไหว",
+              img: "/img/emoji2.png",
+            },
+            {
+              id: severes?.[1]?.problemSevere_id,
+              name: "เริ่มแย่",
+              img: "/img/emojisad.png",
+            },
+            {
+              id: severes?.[2]?.problemSevere_id,
+              name: "ช่วยด้วยย",
+              img: "/img/emoji1.png",
+            },
+          ].map((s) => {
+            const selected = String(problemSevere) === String(s.id);
+
             return (
               <button
-                key={s.problemSevere_id}
+                key={s.id}
                 type="button"
-                onClick={() => setProblemSevere(String(s.problemSevere_id))}
+                onClick={() => setProblemSevere(String(s.id))}
                 className={
-                  "flex flex-col items-center justify-center rounded-2xl border px-3 py-3 transition shadow-sm bg-white " +
-                  (selected
-                    ? "border-slate-900 ring-2 ring-slate-900/10"
-                    : "border-slate-200 hover:border-slate-300")
+                  "flex flex-col items-center justify-start rounded-2xl px-2 py-2 transition " +
+                  (selected ? "opacity-100" : "opacity-60 hover:opacity-90")
                 }
               >
-                <div className="text-2xl leading-none">{pickEmoji(s.problemSevere_name || "")}</div>
-                <div className="mt-1 text-sm text-slate-700 text-center">
-                  {s.problemSevere_name}
-                </div>
+                <img
+                  src={s.img}
+                  alt={s.name}
+                  className="w-14 h-14 object-contain"
+                />
+
+                {selected && (
+                  <div className="mt-1 text-sm font-medium text-slate-800 text-center">
+                    {s.name}
+                  </div>
+                )}
               </button>
             );
           })}
         </div>
-        <p className="text-xs text-slate-400">แตะเพื่อเลือก 1 รายการ</p>
       </div>
 
-      {/* 3) วันที่เจอปัญหา + ปุ่มใส่เวลา */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-slate-700">
-            คุณเจอปัญหาวันไหน
-          </label>
-          <button
-            type="button"
-            onClick={() => setShowTime((v) => !v)} // NEW
-            className="text-xs rounded-lg border border-slate-300 px-2 py-1 hover:bg-slate-50"
-          >
-            {showTime ? "เอาเวลาออก" : "ใส่เวลาเพิ่ม"} {/* NEW */}
-          </button>
-        </div>
-        <input
-          type="date"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-300"
-          value={happenedAt}
-          onChange={(e) => setHappenedAt(e.target.value)}
-        />
 
-        {showTime && ( // NEW: ช่องเวลา
-          <div className="mt-2">
-            <label className="block text-xs text-slate-600 mb-1">
-              เวลา (ไม่บังคับ)
-            </label>
-            <input
-              type="time"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-300"
-              value={happenedTime}
-              onChange={(e) => setHappenedTime(e.target.value)}
-              step={60} // นาทีละ 1 // NEW
-            />
-            <p className="text-xs text-slate-400 mt-1">
-              ถ้าไม่ใส่เวลาจะใช้เวลา 00:00 ของวันที่เลือก
-            </p>
-          </div>
-        )}
-      </div>
 
-      {/* 4) สถานที่ */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700">
-          แจ้งสถานที่ให้เราทราบ (ถ้ามี)
-        </label>
-        <input
-          type="text"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-300"
-          value={problemWhere}
-          onChange={(e) => setProblemWhere(e.target.value)}
-          placeholder="เช่น ในวิทยาลัย / บ้าน / ออนไลน์"
-        />
-      </div>
 
       {/* 5) รายละเอียด */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700">
-          เล่ารายละเอียดให้เราฟังหน่อย <span className="text-rose-600">*</span>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-slate-700 text-center">
+          เล่าให้ฟังหน่อยได้มั้ย
         </label>
-        <textarea
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-300"
-          rows={4}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="เขียนรายละเอียดที่ต้องการรายงาน..."
-          required
-        />
+
+        <div className="relative">
+          <textarea
+            className="
+        w-full
+        rounded-3xl
+        border
+        border-[#E4E9F1]
+        bg-white
+        px-5
+        py-4
+        text-sm
+        text-slate-700
+        outline-none
+        focus:ring-2
+        focus:ring-[#D7E3F7]
+        placeholder:text-[#B8C4D9]
+        placeholder:text-center
+        resize-none
+      "
+            rows={5}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="เขียนรายละเอียดให้ฟังที"
+            required
+          />
+        </div>
       </div>
 
-      {/* 6) ลิงก์รูปภาพ */}
-      {/* ✅ ช่องอัปโหลดรูปภาพ */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700">
-          อัปโหลดรูปภาพหลักฐาน (ถ้ามี)
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files[0])}
-          className="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-slate-300"
-        />
-        {file && (
-          <p className="text-xs text-slate-500">
-            ไฟล์ที่เลือก: <span className="font-medium">{file.name}</span>
-          </p>
-        )}
+      {/* 3 อันเรียงกันด้านล่าง */}
+      <div className="grid grid-cols-3 gap-3">
+
+        {/* --- วันที่เจอปัญหาเดิม --- */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700 text-center">
+            วันที่เจอ
+          </label>
+
+          <input
+            type="date"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none"
+            value={happenedAt}
+            onChange={(e) => setHappenedAt(e.target.value)}
+          />
+
+          {showTime && (
+            <input
+              type="time"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none mt-1"
+              value={happenedTime}
+              onChange={(e) => setHappenedTime(e.target.value)}
+              step={60}
+            />
+          )}
+        </div>
+
+        {/* --- สถานที่เดิม --- */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700 text-center">
+            สถานที่
+          </label>
+
+          <input
+            type="text"
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none"
+            value={problemWhere}
+            onChange={(e) => setProblemWhere(e.target.value)}
+            placeholder="เช่น วิทยาลัย / บ้าน"
+          />
+        </div>
+
+        {/* --- อัปโหลดรูปเดิม --- */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-700 text-center">
+            รูปภาพ
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setFile(e.target.files[0])}
+            className="w-full text-sm border border-slate-300 rounded-xl px-3 py-2"
+          />
+
+          {file && (
+            <p className="text-xs text-slate-500 text-center">
+              {file.name}
+            </p>
+          )}
+        </div>
+
       </div>
+
       {/* 7) ปุ่มส่ง */}
       <div className="pt-2">
         <button
@@ -307,10 +353,6 @@ export default function IssueReportForm({ endpoint = "/api/v1/report", onSubmitt
           {loading ? "กำลังส่ง..." : "ส่งรายงาน"}
         </button>
       </div>
-
-      <p className="text-xs text-slate-400">
-        * ระบบจะดึง <code>token</code> จาก <code>localStorage</code> ชื่อ <code>token</code> เพื่อยืนยันตัวตน
-      </p>
     </form>
   );
 }
