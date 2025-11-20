@@ -546,7 +546,7 @@ export default function StudentHome() {
         }
       >
         <div className="h-[70vh]">
-          <ChatComponent />
+          <ChatComponent role_id={1}/>
         </div>
       </Modal>
     </main>
