@@ -148,7 +148,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
 // import { signIn } from "next-auth/react"; // ไม่ได้ใช้ในโค้ดนี้ คอมเมนต์ออกไว้ก่อนได้ครับ
 import Image from 'next/image';
@@ -168,7 +168,7 @@ export default function LoginPage() {
 
     try {
       const res = await fetch(
-        `http://it.e-tech.ac.th/api/v1/login?username=${studentCode}&password=${password}`,
+        `https://it.e-tech.ac.th/api/v1/login?username=${studentCode}&password=${password}`,
         {
           method: "POST"
         }
@@ -233,6 +233,14 @@ export default function LoginPage() {
     }
   }
 
+  useEffect(() => {
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then((granted) => {
+        console.log("Persistent storage granted?", granted);
+      });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center relative p-4 overflow-hidden">
       {/* 1. Mobile Background (แก้ไข: เช็คนามสกุลไฟล์ให้ตรงกับของจริง) */}
@@ -271,6 +279,7 @@ export default function LoginPage() {
               height={900}
               alt="Logo"
               className="object-contain"
+              priority
             />
           </div>
         </div>

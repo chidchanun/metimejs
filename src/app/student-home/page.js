@@ -359,6 +359,7 @@ export default function StudentHome() {
         width={96}
         height={96}
         className="object-contain"
+        priority
       />
     );
   }
@@ -545,6 +546,8 @@ export default function StudentHome() {
               width={40}
               height={40}
               className="rounded-full"
+              priority
+              fill
             />
             <span>ห้องแชท AI BigBot</span>
           </div>

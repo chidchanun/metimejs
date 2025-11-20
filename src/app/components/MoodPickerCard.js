@@ -201,6 +201,8 @@ export default function MoodPickerCard({ onSubmit }) {
                   width={60}
                   height={60}
                   className=""
+                  priority
+                  fill
                 />
               )}
               <span className="text-sm mt-1">{m.emotion_name}</span>
