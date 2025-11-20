@@ -202,7 +202,7 @@ export default function ChatComponent({ role_id, roomId }) {
 
         <button
           onClick={handleSend}
-          className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition"
+          className="p-3 bg-[#4A9085] text-white rounded-full hover:bg-[#4A9095] cursor-pointer transition"
         >
           <IoSend className="w-6 h-6" />
         </button>
