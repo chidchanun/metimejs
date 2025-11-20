@@ -11,7 +11,7 @@ export async function POST(request) {
         }
 
         if (!room_id || !message) {
-            return NextRequest.json({ message: "Internal Server Error" }, { status: 500 })
+            return NextResponse.json({ message: "Internal Server Error" }, { status: 500 })
         }
 
         const [row] = await db.query(

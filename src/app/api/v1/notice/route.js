@@ -12,7 +12,7 @@ export async function GET() {
 export async function POST(request) {
     try {
         const body = await request.json();
-        const { message, token } = body;
+        const { message, token, room_id } = body;
 
 
         if (!message || message.trim() === "") {
@@ -23,8 +23,10 @@ export async function POST(request) {
         }
 
         if (!token) {
-            return NextResponse.json({ messaeg: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
+            return NextResponse.json({ message: "โปรดเข้าสู่ระบบอีกครั้ง" }, { status: 401 })
         }
+
+        if (!room_id) return NextResponse.json({message : "ไม่พบห้องสนทนา"}, {status : 400})
 
         const [row_token] = await db.query(
             "SELECT * FROM user_tokens WHERE token = ?", [token]
@@ -52,8 +54,8 @@ export async function POST(request) {
 
 
         const [result] = await db.query(
-            "INSERT INTO notice (message, created_at, read_by, status, user_id) VALUES (?, NOW(), JSON_ARRAY(), 'unread', ?)",
-            [message, UserLocalDB.id]
+            "INSERT INTO notice (message, created_at, read_by, status, user_id, room_id) VALUES (?, NOW(), JSON_ARRAY(), 'unread', ?, ?)",
+            [message, UserLocalDB.id, room_id]
         );
 
         return NextResponse.json({

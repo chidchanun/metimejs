@@ -4,11 +4,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const wss = new WebSocketServer({ port: 8082 });
+const wss = new WebSocketServer({ port: 8081 });
 
 const API_TOKEN = process.env.API_KEY;
 const API_URL = "https://sharingbox.online/bigbot/intra/api/v1/aichat/etechMental";
 const NOTICE_API_URL = "http://localhost:3000/api/v1/notice";
+const HISTORY_API_URL = "http://localhost:3000/api/v1/history"
+const ROOM_API_URL = "http://localhost:3000/api/v1/room"
 
 const clients = new Map();
 const NOTICE_DEBOUNCE_MS = 3000; // 3 วินาที
@@ -19,7 +21,7 @@ wss.on("connection", (ws) => {
     ws.on("message", async (msg) => {
         try {
             const data = JSON.parse(msg);
-
+            console.log(data)
             // ======================
             // Init client + role
             // ======================
@@ -58,8 +60,9 @@ wss.on("connection", (ws) => {
 
                 if (clientInfo.ChatTeacher) {
                     const roomId = clientInfo.roomId;
+
+                    // ส่งไปให้ทุกคนก่อน
                     for (const [client, info] of clients.entries()) {
-                        // ส่งเฉพาะคนที่อยู่ในห้องเดียวกัน และไม่ใช่คนส่ง
                         if (info.roomId === roomId && client !== ws && client.readyState === ws.OPEN) {
                             client.send(JSON.stringify({
                                 type: "chat",
@@ -68,7 +71,26 @@ wss.on("connection", (ws) => {
                             }));
                         }
                     }
-                    // ไม่ต้องส่ง ws.send กลับไปยังตัวเอง
+
+                    // ⬅️ บันทึกประวัติแค่ครั้งเดียว
+                    console.log(roomId)
+                    const historyChat = await fetch(HISTORY_API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            token: clientInfo.token,
+                            message: userMessage,
+                            room_id: roomId,
+                        })
+                    });
+
+                    if (!historyChat.ok) {
+                        ws.send(JSON.stringify({
+                            type: "error",
+                            message: "ไม่สามารถบันทึกเก็บประวัติสนทนาได้"
+                        }));
+                    }
+
                     return;
                 }
 
@@ -112,10 +134,27 @@ wss.on("connection", (ws) => {
 
                 const noticeText = data.message;
 
+                const roomRes = await fetch(ROOM_API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: clientInfo.token })
+                });
+
+                if (!roomRes.ok) return;
+
+                const roomData = await roomRes.json();
+
+                // ⭐⭐ ตั้ง roomId ใหม่ให้ client ทันที ⭐⭐
+                clientInfo.roomId = roomData.room_id;
+
                 const apiRes = await fetch(NOTICE_API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: noticeText, token: clientInfo.token }),
+                    body: JSON.stringify({
+                        message: noticeText,
+                        token: clientInfo.token,
+                        room_id: roomData.room_id
+                    }),
                 });
 
                 const apiData = await apiRes.json();
@@ -126,7 +165,8 @@ wss.on("connection", (ws) => {
                         type: "error_notice",
                         message: apiData.message || "ไม่สามารถบันทึก notice ผ่าน API ได้"
                     }));
-                    clients.delete(ws)
+
+                    clients.delete(ws);
                     return;
                 }
 
@@ -143,6 +183,13 @@ wss.on("connection", (ws) => {
                         }));
                     }
                 }
+
+                ws.send(JSON.stringify({
+                    type: "chat",
+                    message: "โปรดรอฝ่ายพัฒนาตอบกลับ",
+                    role: "teacher"
+                }));
+
                 return;
             }
 
@@ -158,4 +205,4 @@ wss.on("connection", (ws) => {
     });
 });
 
-console.log("WebSocket Server running on ws://localhost:8082");
+console.log("WebSocket Server running on ws://localhost:8081");
