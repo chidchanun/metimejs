@@ -1,5 +1,7 @@
 "use client";
 
+import { FiLogOut } from "react-icons/fi";
+
 export default function LogoutButton({ className = "" }) {
   const handleLogout = () => {
     // ลบ cookie token
@@ -15,9 +17,17 @@ export default function LogoutButton({ className = "" }) {
   return (
     <button
       onClick={handleLogout}
-      className={`rounded-2xl bg-red-600 text-white px-4 py-3 text-sm md:text-base hover:opacity-90 shadow-sm transition-opacity active:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 ${className}`}
+      aria-label="ออกจากระบบ"
+      className={`
+        flex items-center justify-center
+        w-11 h-11 rounded-full
+        bg-red-600 text-white
+        shadow-md hover:opacity-90 active:opacity-80
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300
+        ${className}
+      `}
     >
-      ออกจากระบบ
+      <FiLogOut className="w-5 h-5" />
     </button>
   );
 }
