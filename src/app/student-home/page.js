@@ -340,6 +340,9 @@ export default function StudentHome() {
     month: "2-digit",
     year: "2-digit",
   });
+
+  const showCount = isMobile ? 5 : visibleCount;
+
   function moodImage(moodId) {
     const src = EMOJI_IMAGES[moodId];
 
@@ -442,7 +445,7 @@ export default function StudentHome() {
                     </div>
                   )}
 
-                  {myIssues.slice(0, visibleCount).map((issue) => (
+                  {myIssues.slice(0, showCount).map((issue) => (
                     <div
                       key={issue.id}
                       className="flex items-center justify-between w-full rounded-2xl bg-white px-5 py-4 shadow-sm"
@@ -472,7 +475,7 @@ export default function StudentHome() {
                   ))}
                 </div>
                 {/* LOAD MORE BUTTON */}
-                {visibleCount < myIssues.length && (
+                {!isMobile && visibleCount < myIssues.length && (
                   <button
                     onClick={() => setVisibleCount(prev => prev + 10)}
                     className="mt-3 px-4 py-1 bg-slate-200 text-slate-700 text-sm rounded-md hover:bg-slate-300 transition self-center"
@@ -480,6 +483,7 @@ export default function StudentHome() {
                     โหลดเพิ่ม
                   </button>
                 )}
+
 
                 {/* ปุ่มห้องแชท */}
                 {/* <div className="mt-5 flex flex-wrap gap-3">
